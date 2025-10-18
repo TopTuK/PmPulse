@@ -27,7 +27,7 @@ namespace PmPulse.AppDomain.Services
                         "Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
         };
 
-        private const int DefaultRequestTimeout = 10;
+        private const int DefaultRequestTimeout = 60;
 
         public static async Task<TelegramChannel> ParseChannelAsync(string channelName, bool onlyText = false, int limit = 100)
         {

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Orleans.Providers;
 using PmPulse.AppDomain.Models;
+using PmPulse.AppDomain.Models.Feed;
 using PmPulse.AppDomain.Models.Post;
 using PmPulse.GrainClasses.State;
 using PmPulse.GrainInterfaces;
@@ -26,13 +27,21 @@ namespace PmPulse.GrainClasses
         private readonly IPersistentState<FeedGrainState> _feedState = feedState;
         private readonly IPersistentState<FeedPostsState> _postState = postState;
 
-        public async Task InitializeState(string slug, string url, int delaySeconds, int updateMinutes)
+        public async Task InitializeState(string slug, string url, 
+            int delaySeconds, int updateMinutes,
+            FeedType feedType)
         {
             var grainId = this.GetPrimaryKey();
             _logger.LogInformation("FeedGrain::InitializeState: initialize state. " +
                 "GrainId={grainId} Slug={slug} Url={url}", grainId, slug, url);
 
-            var fetcherGrain = GrainFactory.GetGrain<ITelegramFeedFetcherGrain>(grainId);
+            IFeedFetcherGrain fetcherGrain = (feedType) switch
+            {
+                FeedType.Telegram => GrainFactory.GetGrain<ITelegramFeedFetcherGrain>(grainId),
+                FeedType.Rss => GrainFactory.GetGrain<IRssFeedFetcherGrain>(grainId),
+                _ => throw new ArgumentException("Unknown feed type", nameof(feedType))
+            };
+
             await fetcherGrain.StartFetch(slug, url, delaySeconds, updateMinutes);
             _logger.LogInformation("FeedGrain::InitializeState: started fetch news. " +
                 "GrainId={grainId} Url={url} DelaySeconds={delaySeconds}, UpdateMinutes={updateMinutes}",
@@ -40,7 +49,8 @@ namespace PmPulse.GrainClasses
 
             _feedState.State.Url = url;
             _feedState.State.Slug = slug;
-            _feedState.State.CurrentState = AppDomain.Models.Feed.FeedState.Ready;
+            _feedState.State.CurrentState = FeedState.Ready;
+            _feedState.State.FeedType = feedType;
             await _feedState.WriteStateAsync();
 
             _logger.LogInformation("FeedGrain::InitializeState: complete initialize state. " +
@@ -67,7 +77,7 @@ namespace PmPulse.GrainClasses
             _logger.LogInformation("FeedGrain::GetFeedPosts: start get feed posts. " +
                 "GrainId={grainId} Limit={limit}", grainId, limit);
 
-            if (_feedState.State.CurrentState == AppDomain.Models.Feed.FeedState.None)
+            if (_feedState.State.CurrentState == FeedState.None)
             {
                 _logger.LogWarning("FeedGrain::GetFeedPosts: feed grain is not initialized. " +
                     "GrainId={grainId}", grainId);

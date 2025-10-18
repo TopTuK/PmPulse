@@ -10,6 +10,7 @@ namespace PmPulse.AppDomain.Models.Feed
     public interface IFeed
     {
         [JsonIgnore] Guid Id { get; }
+        [JsonIgnore] FeedType FeedType { get; }
         string Slug { get; }
         string Title { get; }
         string Description { get; }

@@ -13,5 +13,6 @@ namespace PmPulse.GrainClasses.State
         [Id(0)] public FeedState CurrentState { get; set; } = FeedState.None;
         [Id(1)] public string Slug { get; set; } = string.Empty;
         [Id(2)] public string Url { get; set; } = string.Empty;
+        [Id(3)] public FeedType FeedType { get; set; } = FeedType.None;
     }
 }

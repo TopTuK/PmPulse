@@ -3,6 +3,7 @@
     public class FeedSettings
     {
         public string Id { get; set; } = string.Empty;
+        public int FeedType { get; set; } = -1;
         public string Slug { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

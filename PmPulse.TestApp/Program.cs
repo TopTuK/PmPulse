@@ -3,6 +3,11 @@
 // Test the ChannelParser
 try
 {
+    Console.WriteLine("Testing RssParser...");
+
+    const string feedUrl = "https://www.kommersant.ru/RSS/news.xml";
+    await RssParser.ParseRssFeedAsync(feedUrl);
+    /*
     Console.WriteLine("Testing ChannelParser...");
     
     // Example usage - replace with an actual channel name
@@ -20,6 +25,7 @@ try
         Console.WriteLine($"  Photo: {message.Photo}");
         Console.WriteLine();
     }
+    */
 }
 catch (Exception ex)
 {

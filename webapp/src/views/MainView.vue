@@ -70,7 +70,34 @@ onMounted(async () => {
                             :feed="feed"
                         />
                     </div>
+                    <div v-else class="flex flex-col justify-center items-center w-full p-4">
+                        <va-icon
+                            name="error_outline"
+                            size="48px"
+                            color="danger"
+                        />
+                        <span class="text-xl font-semibold text-red-600 mt-2">
+                            {{ $t('feed.feed_error_load_title') }}
+                        </span>
+                        <span class="text-base text-gray-500">
+                            {{ $t('feed.feed_error_load_description') }}
+                        </span>
+                    </div>
                 </div>
+            </div>
+
+            <div v-else class="flex flex-col justify-center items-center p-4">
+                <va-icon
+                    name="error_outline"
+                    size="48px"
+                    color="danger"
+                />
+                <span class="text-xl font-semibold text-red-600 mt-2">
+                    {{ $t('feed.feed_error_load_title') }}
+                </span>
+                <span class="text-base text-gray-500">
+                    {{ $t('feed.feed_error_load_description') }}
+                </span>
             </div>
         </div>
     </div>

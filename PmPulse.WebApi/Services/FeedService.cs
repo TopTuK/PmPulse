@@ -15,6 +15,7 @@ namespace PmPulse.WebApi.Services
         private class Feed : IFeed
         {
             public Guid Id { get; init; }
+            public FeedType FeedType { get; init; } = FeedType.None;
             public string Slug { get; init; } = string.Empty;
             public string Title { get; init; } = string.Empty;
             public string Description { get; init; } = string.Empty;
@@ -25,7 +26,6 @@ namespace PmPulse.WebApi.Services
 
             public int DelaySeconds { get; init; }
             public int UpdateMinutes { get; init; }
-
         }
 
         private readonly ILogger<FeedService> _logger = logger;
@@ -34,6 +34,7 @@ namespace PmPulse.WebApi.Services
                 .Select(f => new Feed
                 {
                     Id = Guid.Parse(f.Id),
+                    FeedType = (FeedType) f.FeedType,
                     Slug = f.Slug,
                     Title = f.Title,
                     Description = f.Description,
@@ -69,7 +70,13 @@ namespace PmPulse.WebApi.Services
                 .Select(feed =>
                 {
                     var feedGrain = _clusterClient.GetGrain<IFeedGrain>(feed.Id);
-                    return feedGrain.InitializeState(feed.Slug, feed.Url, feed.DelaySeconds, feed.UpdateMinutes);
+                    return feedGrain.InitializeState(
+                        feed.Slug, 
+                        feed.Url, 
+                        feed.DelaySeconds, 
+                        feed.UpdateMinutes,
+                        feed.FeedType
+                    );
                 })
                 .ToList();
 
