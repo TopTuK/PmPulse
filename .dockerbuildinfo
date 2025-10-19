@@ -1,0 +1,66 @@
+# Docker Build Information
+
+## Images to Build
+
+1. **pmpulse-silohost:latest**
+   - Dockerfile: PmPulse.FeedSiloHost/Dockerfile
+   - Context: . (project root)
+   - Purpose: Orleans Silo Host for distributed grain processing
+
+2. **pmpulse-webapi:latest**
+   - Dockerfile: PmPulse.WebApi/Dockerfile
+   - Context: . (project root)
+   - Purpose: ASP.NET Core Web API
+
+3. **pmpulse-front:latest**
+   - Dockerfile: webapp/Dockerfile
+   - Context: ./webapp
+   - Purpose: Vue.js frontend with Nginx
+
+## Build Commands
+
+### All images (recommended):
+```bash
+./build-images.sh           # macOS/Linux
+.\build-images.ps1          # Windows PowerShell
+```
+
+### Individual images:
+```bash
+docker build -f PmPulse.FeedSiloHost/Dockerfile -t pmpulse-silohost:latest .
+docker build -f PmPulse.WebApi/Dockerfile -t pmpulse-webapi:latest .
+docker build -f webapp/Dockerfile -t pmpulse-front:latest ./webapp
+```
+
+## After Building
+
+Start all services:
+```bash
+docker-compose up
+```
+
+Or use Aspire orchestration:
+```bash
+dotnet run --project PmPulse.AppHost
+```
+
+## Files Created
+
+- ✅ docker-compose.yml - Orchestration configuration with health checks
+- ✅ .dockerignore - Optimized build context
+- ✅ PmPulse.FeedSiloHost/Dockerfile - Multi-stage build
+- ✅ PmPulse.WebApi/Dockerfile - Multi-stage build
+- ✅ webapp/Dockerfile - Multi-stage build with Nginx
+- ✅ webapp/nginx.conf - Nginx configuration
+- ✅ build-images.sh - Linux/macOS build script
+- ✅ build-images.ps1 - Windows PowerShell build script
+- ✅ QUICKSTART-DOCKER.md - Quick start guide
+- ✅ DOCKER.md - Comprehensive Docker documentation
+
+## Next Steps
+
+1. Start Docker Desktop
+2. Run build script: ./build-images.sh
+3. Start services: docker-compose up
+4. Access at http://localhost:80
+

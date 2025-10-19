@@ -12,10 +12,27 @@ try
     var builder = Host.CreateDefaultBuilder(args);
 
     builder
-        .UseOrleans(silo =>
+        .UseOrleans((context, silo) =>
         {
-            silo.UseLocalhostClustering()
-                .Configure<Orleans.Configuration.ClusterOptions>(options =>
+            var environment = context.HostingEnvironment;
+            
+            if (environment.IsDevelopment() && Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
+            {
+                // Use localhost clustering for local development
+                silo.UseLocalhostClustering();
+            }
+            else
+            {
+                // Use Docker/Kubernetes networking
+                var siloPort = int.Parse(Environment.GetEnvironmentVariable("ORLEANS_SILO_PORT") ?? "11111");
+                var gatewayPort = int.Parse(Environment.GetEnvironmentVariable("ORLEANS_GATEWAY_PORT") ?? "30000");
+                var advertisedIP = Environment.GetEnvironmentVariable("ORLEANS_ADVERTISED_IP") ?? "pmpulse-silohost";
+                
+                silo.UseKubernetesHosting()
+                    .ConfigureEndpoints(advertisedIP, siloPort, gatewayPort, listenOnAnyHostAddress: true);
+            }
+            
+            silo.Configure<Orleans.Configuration.ClusterOptions>(options =>
                 {
                     options.ClusterId = "dev";
                     options.ServiceId = "PmPulse";

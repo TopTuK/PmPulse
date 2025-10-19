@@ -43,7 +43,23 @@ try
     // Add Orleans client
     builder.UseOrleansClient(client =>
     {
-        client.UseLocalhostClustering();
+        var environment = builder.Environment;
+        
+        if (environment.IsDevelopment() && Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
+        {
+            // Use localhost clustering for local development
+            client.UseLocalhostClustering();
+        }
+        else
+        {
+            // Use Docker/Kubernetes networking
+            var siloHost = Environment.GetEnvironmentVariable("ORLEANS_SILO_HOST") ?? "pmpulse-silohost";
+            var gatewayPort = int.Parse(Environment.GetEnvironmentVariable("ORLEANS_GATEWAY_PORT") ?? "30000");
+            
+            client.UseStaticClustering(new System.Net.IPEndPoint(
+                System.Net.Dns.GetHostAddresses(siloHost)[0], 
+                gatewayPort));
+        }
         
         // Configure connection retry for better reliability
         client.Configure<Orleans.Configuration.ClusterOptions>(options =>

@@ -1,0 +1,42 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.vs
+.idea
+*.swp
+*.swo
+*~
+
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+**/dist/
+**/build/
+
+# Node
+**/node_modules/
+**/npm-debug.log
+**/yarn-error.log
+
+# Documentation
+*.md
+LICENSE.txt
+
+# Docker
+**/.dockerignore
+**/Dockerfile*
+docker-compose*.yml
+
+# Test files
+**/*[tT]est*/
+**/*.Test/
+
+# Misc
+**/.DS_Store
+**/Thumbs.db
+
