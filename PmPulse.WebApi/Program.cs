@@ -44,6 +44,19 @@ try
     builder.UseOrleansClient(client =>
     {
         client.UseLocalhostClustering();
+        
+        // Configure connection retry for better reliability
+        client.Configure<Orleans.Configuration.ClusterOptions>(options =>
+        {
+            options.ClusterId = "dev";
+            options.ServiceId = "PmPulse";
+        });
+        
+        // Add retry logic for gateway connections
+        client.Configure<Orleans.Configuration.GatewayOptions>(options =>
+        {
+            options.GatewayListRefreshPeriod = TimeSpan.FromSeconds(10);
+        });
     });
 
     /* BUILD */

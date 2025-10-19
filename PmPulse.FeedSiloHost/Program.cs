@@ -15,6 +15,11 @@ try
         .UseOrleans(silo =>
         {
             silo.UseLocalhostClustering()
+                .Configure<Orleans.Configuration.ClusterOptions>(options =>
+                {
+                    options.ClusterId = "dev";
+                    options.ServiceId = "PmPulse";
+                })
                 .UseInMemoryReminderService()
                 .AddMemoryGrainStorage(OrleansConstants.FEED_STATE_STORE_NAME)
                 .AddMemoryGrainStorage(OrleansConstants.POST_STATE_STORE_NAME)
