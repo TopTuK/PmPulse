@@ -16,7 +16,7 @@ try
         {
             var environment = context.HostingEnvironment;
             
-            if (environment.IsDevelopment() && Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
+            if (environment.IsDevelopment())
             {
                 // Use localhost clustering for local development
                 silo.UseLocalhostClustering();

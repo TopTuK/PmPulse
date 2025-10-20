@@ -45,7 +45,7 @@ try
     {
         var environment = builder.Environment;
         
-        if (environment.IsDevelopment() && Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
+        if (environment.IsDevelopment())
         {
             // Use localhost clustering for local development
             client.UseLocalhostClustering();
@@ -91,14 +91,6 @@ try
 
     app.UseStaticFiles();
     app.UseRouting();
-
-    // https://habr.com/ru/articles/468401/
-    /*
-    app.UseMiddleware<UserAuthMiddleware>();
-    app.UseAuthentication();
-    app.UseAuthorization();
-    app.UseMiddleware<UserIdMiddleware>();
-    */
 
 #pragma warning disable ASP0014 // Suggest using top level route registrations
     app.UseEndpoints(endpoints =>

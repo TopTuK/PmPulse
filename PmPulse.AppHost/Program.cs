@@ -1,18 +1,23 @@
+using Microsoft.Extensions.Hosting;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
-/*var environment = builder.Environment;
-
-if (environment.IsDevelopment() && Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
+if (builder.Environment.IsDevelopment())
 {  
     var front = builder.AddNpmApp("front", "../webapp", "dev");
-    var feedSiloHost = builder.AddProject<Projects.PmPulse_FeedSiloHost>("pmpulse-siloHost");
+    var feedSiloHost = builder.AddProject<Projects.PmPulse_FeedSiloHost>("pmpulse-siloHost")
+        .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
+        .WithEnvironment("DOTNET_ENVIRONMENT", "Development");
     var webApi = builder
         .AddProject<Projects.PmPulse_WebApi>("pmpulse-webapi")
+        .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
+        .WithEnvironment("DOTNET_ENVIRONMENT", "Development")
         .WithReference(front)
-        .WithReference(feedSiloHost);
+        .WithReference(feedSiloHost)
+        .WaitFor(feedSiloHost);
 }
 else
-{*/
+{
     // Add Redis for Orleans clustering
     var redis = builder.AddRedis("redis");
 
@@ -37,7 +42,7 @@ else
         .WithEnvironment("DOTNET_RUNNING_IN_CONTAINER", "true")
         .WithEnvironment("ASPNETCORE_URLS", "http://+:8080")
         .WithReference(redis);
-//}
+}
 
 builder
     .Build()
