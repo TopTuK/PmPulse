@@ -52,13 +52,15 @@ try
         }
         else
         {
-            // Use Docker/Kubernetes networking
-            var siloHost = Environment.GetEnvironmentVariable("ORLEANS_SILO_HOST") ?? "pmpulse-silohost";
-            var gatewayPort = int.Parse(Environment.GetEnvironmentVariable("ORLEANS_GATEWAY_PORT") ?? "30000");
+            // Use Redis clustering for Docker networking with scale support
+            var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") 
+                ?? Environment.GetEnvironmentVariable("ConnectionStrings__redis") 
+                ?? "localhost:6379";
             
-            client.UseStaticClustering(new System.Net.IPEndPoint(
-                System.Net.Dns.GetHostAddresses(siloHost)[0], 
-                gatewayPort));
+            client.UseRedisClustering(options =>
+            {
+                options.ConfigurationOptions = StackExchange.Redis.ConfigurationOptions.Parse(redisConnectionString);
+            });
         }
         
         // Configure connection retry for better reliability

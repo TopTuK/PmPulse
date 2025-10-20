@@ -1,24 +1,42 @@
 version: '3.8'
 
 services:
-  # Orleans Silo Host
+  # Redis for Orleans clustering
+  redis:
+    image: redis:7-alpine
+    container_name: pmpulse-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - pmpulse-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Orleans Silo Host (scalable)
   pmpulse-silohost:
     build:
       context: .
       dockerfile: PmPulse.FeedSiloHost/Dockerfile
     image: pmpulse-silohost:latest
-    container_name: pmpulse-silohost
+    # Removed container_name to allow scaling with docker-compose up --scale pmpulse-silohost=N
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - DOTNET_RUNNING_IN_CONTAINER=true
       - ORLEANS_SILO_PORT=11111
       - ORLEANS_GATEWAY_PORT=30000
-      - ORLEANS_ADVERTISED_IP=pmpulse-silohost
+      - REDIS_CONNECTION_STRING=redis:6379
     ports:
-      - "11111:11111"
-      - "30000:30000"
+      - "11111"
+      - "30000"
     networks:
       - pmpulse-network
+    depends_on:
+      redis:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:11111 || exit 1"]
@@ -38,11 +56,12 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - DOTNET_RUNNING_IN_CONTAINER=true
       - ASPNETCORE_URLS=http://+:8080
-      - ORLEANS_SILO_HOST=pmpulse-silohost
-      - ORLEANS_GATEWAY_PORT=30000
+      - REDIS_CONNECTION_STRING=redis:6379
     ports:
       - "8080:8080"
     depends_on:
+      redis:
+        condition: service_healthy
       pmpulse-silohost:
         condition: service_healthy
     networks:
