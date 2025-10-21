@@ -12,10 +12,36 @@ try
     var builder = Host.CreateDefaultBuilder(args);
 
     builder
-        .UseOrleans(silo =>
+        .UseOrleans((context, silo) =>
         {
-            silo.UseLocalhostClustering()
-                .Configure<Orleans.Configuration.ClusterOptions>(options =>
+            var environment = context.HostingEnvironment;
+            
+            if (environment.IsDevelopment())
+            {
+                // Use localhost clustering for local development
+                silo.UseLocalhostClustering();
+            }
+            else
+            {
+                // Use Docker container networking with Redis clustering for scale support
+                var siloPort = int.Parse(Environment.GetEnvironmentVariable("ORLEANS_SILO_PORT") ?? "11111");
+                var gatewayPort = int.Parse(Environment.GetEnvironmentVariable("ORLEANS_GATEWAY_PORT") ?? "30000");
+                var advertisedIP = Environment.GetEnvironmentVariable("ORLEANS_ADVERTISED_IP") ?? Environment.GetEnvironmentVariable("HOSTNAME");
+                var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") 
+                    ?? Environment.GetEnvironmentVariable("ConnectionStrings__redis") 
+                    ?? "localhost:6379";
+                
+                // Configure endpoints for Docker networking
+                silo.ConfigureEndpoints(advertisedIP, siloPort, gatewayPort, listenOnAnyHostAddress: true);
+                
+                // Use Redis for clustering to support horizontal scaling
+                silo.UseRedisClustering(options =>
+                {
+                    options.ConfigurationOptions = StackExchange.Redis.ConfigurationOptions.Parse(redisConnectionString);
+                });
+            }
+            
+            silo.Configure<Orleans.Configuration.ClusterOptions>(options =>
                 {
                     options.ClusterId = "dev";
                     options.ServiceId = "PmPulse";

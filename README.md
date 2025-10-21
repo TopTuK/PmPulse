@@ -52,6 +52,8 @@ PmPulse aggregates content from diverse sources and presents it through customiz
 ### Infrastructure
 - **Orleans Silo**: Distributed grain hosting
 - **Service Defaults**: Shared service configurations
+- **Docker**: Containerization support for all services
+- **Docker Compose**: Multi-container orchestration
 
 ## Architecture
 
@@ -92,6 +94,11 @@ PmPulse uses a distributed grain-based architecture powered by Microsoft Orleans
 
 ### Prerequisites
 
+#### For Docker Deployment (Recommended)
+- **Docker Desktop** or **Docker Engine** with Docker Compose
+- **.NET 8.0 SDK** (for Aspire orchestration)
+
+#### For Local Development
 - **.NET 8.0 SDK** or later
 - **Node.js 20.19+** or **22.12+**
 - **npm** or **yarn**
@@ -104,12 +111,28 @@ PmPulse uses a distributed grain-based architecture powered by Microsoft Orleans
    cd PmPulse
    ```
 
-2. **Restore .NET dependencies**
+2. **For Docker deployment (skip to step 3 for local development)**
+   
+   See [QUICKSTART-DOCKER.md](QUICKSTART-DOCKER.md) for quick Docker setup, or:
+   
+   ```bash
+   # Build images
+   ./build-images.sh          # macOS/Linux
+   # or
+   .\build-images.ps1         # Windows PowerShell
+   
+   # Start services
+   docker-compose up
+   ```
+
+3. **For local development**
+   
+   **Restore .NET dependencies:**
    ```bash
    dotnet restore
    ```
 
-3. **Install frontend dependencies**
+   **Install frontend dependencies:**
    ```bash
    cd webapp
    npm install
@@ -118,15 +141,46 @@ PmPulse uses a distributed grain-based architecture powered by Microsoft Orleans
 
 ### Running the Application
 
-#### Option 1: Using .NET Aspire (Recommended)
+#### Option 1: Using .NET Aspire with Docker (Recommended)
 
+**Using the startup scripts:**
+```bash
+./run-apphost.sh          # macOS/Linux
+# or
+.\run-apphost.ps1         # Windows PowerShell
+```
+
+**Or directly:**
 ```bash
 dotnet run --project PmPulse.AppHost
 ```
 
-This will start all services with proper orchestration. The Aspire dashboard will be available to monitor your services.
+This will start all services in Docker containers with proper orchestration. The Aspire dashboard will be available to monitor your services. All services will run in isolated containers with proper networking.
 
-#### Option 2: Manual Start
+**Services will be available at:**
+- Frontend: `http://localhost:80`
+- Web API: `http://localhost:8080`
+- Orleans Silo: Ports `11111` (silo) and `30000` (gateway)
+- Aspire Dashboard: Check console output for the dashboard URL
+
+#### Option 2: Using Docker Compose
+
+```bash
+docker-compose up --build
+```
+
+This will build and start all services using Docker Compose. Use this option if you prefer Docker Compose over Aspire orchestration.
+
+**Services will be available at:**
+- Frontend: `http://localhost:80`
+- Web API: `http://localhost:8080`
+
+To stop the services:
+```bash
+docker-compose down
+```
+
+#### Option 3: Local Development (No Docker)
 
 1. **Start the Orleans Silo**
    ```bash
@@ -200,12 +254,61 @@ The frontend uses:
 - **Tailwind CSS** for styling
 - **Axios** for API communication
 
+## Docker Support
+
+PmPulse includes full Docker support with containerized deployment options:
+
+### Docker Files
+
+- **`PmPulse.WebApi/Dockerfile`**: Multi-stage build for the Web API
+- **`PmPulse.FeedSiloHost/Dockerfile`**: Multi-stage build for the Orleans Silo
+- **`webapp/Dockerfile`**: Multi-stage build with Nginx for the frontend
+- **`docker-compose.yml`**: Orchestration file for all services
+- **`.dockerignore`**: Optimizes Docker build context
+
+### Container Networking
+
+The application uses automatic service discovery in Docker:
+
+- **Orleans Silo Host**: Advertises itself as `pmpulse-silohost` on ports 11111 (silo) and 30000 (gateway)
+- **Web API**: Connects to the silo using the service name `pmpulse-silohost`
+- **Frontend**: Nginx-based container serving the built Vue.js application
+
+### Environment Variables
+
+The following environment variables control Docker networking:
+
+**FeedSiloHost:**
+- `ORLEANS_SILO_PORT`: Silo communication port (default: 11111)
+- `ORLEANS_GATEWAY_PORT`: Gateway port for clients (default: 30000)
+- `ORLEANS_ADVERTISED_IP`: Service name for discovery (default: pmpulse-silohost)
+- `DOTNET_RUNNING_IN_CONTAINER`: Enables Docker mode (set to "true")
+
+**WebApi:**
+- `ORLEANS_SILO_HOST`: Hostname of the Orleans Silo (default: pmpulse-silohost)
+- `ORLEANS_GATEWAY_PORT`: Port to connect to gateway (default: 30000)
+- `DOTNET_RUNNING_IN_CONTAINER`: Enables Docker mode (set to "true")
+
+### Building Individual Containers
+
+```bash
+# Build Orleans Silo
+docker build -f PmPulse.FeedSiloHost/Dockerfile -t pmpulse-silohost .
+
+# Build Web API
+docker build -f PmPulse.WebApi/Dockerfile -t pmpulse-webapi .
+
+# Build Frontend
+docker build -f webapp/Dockerfile -t pmpulse-front ./webapp
+```
+
 ## Configuration
 
 Configuration files:
 - `PmPulse.WebApi/appsettings.json`: API configuration
 - `PmPulse.AppHost/appsettings.json`: Aspire orchestration settings
 - `webapp/vite.config.js`: Frontend build configuration
+- `docker-compose.yml`: Docker orchestration configuration
 
 ## API Endpoints
 

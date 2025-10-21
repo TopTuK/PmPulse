@@ -43,7 +43,25 @@ try
     // Add Orleans client
     builder.UseOrleansClient(client =>
     {
-        client.UseLocalhostClustering();
+        var environment = builder.Environment;
+        
+        if (environment.IsDevelopment())
+        {
+            // Use localhost clustering for local development
+            client.UseLocalhostClustering();
+        }
+        else
+        {
+            // Use Redis clustering for Docker networking with scale support
+            var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") 
+                ?? Environment.GetEnvironmentVariable("ConnectionStrings__redis") 
+                ?? "localhost:6379";
+            
+            client.UseRedisClustering(options =>
+            {
+                options.ConfigurationOptions = StackExchange.Redis.ConfigurationOptions.Parse(redisConnectionString);
+            });
+        }
         
         // Configure connection retry for better reliability
         client.Configure<Orleans.Configuration.ClusterOptions>(options =>
@@ -73,14 +91,6 @@ try
 
     app.UseStaticFiles();
     app.UseRouting();
-
-    // https://habr.com/ru/articles/468401/
-    /*
-    app.UseMiddleware<UserAuthMiddleware>();
-    app.UseAuthentication();
-    app.UseAuthorization();
-    app.UseMiddleware<UserIdMiddleware>();
-    */
 
 #pragma warning disable ASP0014 // Suggest using top level route registrations
     app.UseEndpoints(endpoints =>
