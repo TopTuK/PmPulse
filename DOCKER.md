@@ -6,8 +6,16 @@ This guide provides detailed instructions for running PmPulse using Docker conta
 
 ### Option 1: .NET Aspire with Docker (Recommended)
 
+**Using the startup scripts:**
 ```bash
 # Make sure Docker is running
+./run-apphost.sh          # macOS/Linux
+# or
+.\run-apphost.ps1         # Windows PowerShell
+```
+
+**Or directly:**
+```bash
 dotnet run --project PmPulse.AppHost
 ```
 

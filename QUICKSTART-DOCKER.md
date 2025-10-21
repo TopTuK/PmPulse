@@ -279,6 +279,14 @@ docker-compose up
 
 For the best development experience with .NET Aspire orchestration:
 
+**Using the startup scripts:**
+```bash
+./run-apphost.sh          # macOS/Linux
+# or
+.\run-apphost.ps1         # Windows PowerShell
+```
+
+**Or directly:**
 ```bash
 dotnet run --project PmPulse.AppHost
 ```

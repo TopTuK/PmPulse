@@ -143,6 +143,14 @@ PmPulse uses a distributed grain-based architecture powered by Microsoft Orleans
 
 #### Option 1: Using .NET Aspire with Docker (Recommended)
 
+**Using the startup scripts:**
+```bash
+./run-apphost.sh          # macOS/Linux
+# or
+.\run-apphost.ps1         # Windows PowerShell
+```
+
+**Or directly:**
 ```bash
 dotnet run --project PmPulse.AppHost
 ```
