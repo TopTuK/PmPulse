@@ -9,8 +9,8 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the application (override vite config to output to dist)
+RUN npx vite build --outDir /app/dist
 
 # Production stage
 FROM nginx:alpine AS final
