@@ -3,7 +3,7 @@ using Microsoft.Extensions.Hosting;
 var builder = DistributedApplication.CreateBuilder(args);
 
 var startupType = Environment.GetEnvironmentVariable("STARTUP_TYPE")?.ToLower();
-var IsDevelopment = !builder.Environment.IsDevelopment();
+var IsNotDevelopment = !builder.Environment.IsDevelopment();
 
 if (startupType == "docker")
 {
@@ -14,8 +14,8 @@ if (startupType == "docker")
     var feedSiloHost = builder.AddDockerfile("pmpulse-silohost", "..", "PmPulse.FeedSiloHost/Dockerfile")
         .WithHttpEndpoint(port: 11111, targetPort: 11111, name: "silo")
         .WithHttpEndpoint(port: 30000, targetPort: 30000, name: "gateway")
-        .WithEnvironment("ASPNETCORE_ENVIRONMENT", IsDevelopment ? "Development" : "Docker")
-        .WithEnvironment("DOTNET_ENVIRONMENT", IsDevelopment ? "Development" : "Docker")
+        .WithEnvironment("ASPNETCORE_ENVIRONMENT", IsNotDevelopment ? "Development" : "Docker")
+        .WithEnvironment("DOTNET_ENVIRONMENT", IsNotDevelopment ? "Development" : "Docker")
         .WithEnvironment("ORLEANS_SILO_PORT", "11111")
         .WithEnvironment("ORLEANS_GATEWAY_PORT", "30000")
         .WithReference(redis);
@@ -27,8 +27,8 @@ if (startupType == "docker")
     // Start Web API in Docker
     var webApi = builder.AddDockerfile("pmpulse-webapi", "..", "PmPulse.WebApi/Dockerfile")
         .WithHttpEndpoint(port: 8080, targetPort: 8080, name: "http")
-        .WithEnvironment("ASPNETCORE_ENVIRONMENT", IsDevelopment ? "Development" : "Docker")
-        .WithEnvironment("DOTNET_ENVIRONMENT", IsDevelopment ? "Development" : "Docker")
+        .WithEnvironment("ASPNETCORE_ENVIRONMENT", IsNotDevelopment ? "Development" : "Docker")
+        .WithEnvironment("DOTNET_ENVIRONMENT", IsNotDevelopment ? "Development" : "Docker")
         .WithEnvironment("ASPNETCORE_URLS", "http://+:8080")
         .WithReference(redis);
 }
