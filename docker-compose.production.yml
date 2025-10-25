@@ -1,0 +1,77 @@
+services:
+  # Redis for Orleans clustering
+  redis:
+    image: redis:7-alpine
+    container_name: pmpulse-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - pmpulse-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Orleans Silo Host (scalable)
+  pmpulse-silohost:
+    image: ghcr.io/toptuk/pmpulse-silohost:latest
+    # Removed container_name to allow scaling with docker-compose up --scale pmpulse-silohost=N
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - DOTNET_ENVIRONMENT=Docker
+      - ORLEANS_SILO_PORT=11111
+      - ORLEANS_GATEWAY_PORT=30000
+      - REDIS_CONNECTION_STRING=redis:6379
+    ports:
+      - "11111:11111"
+      - "30000:30000"
+    networks:
+      - pmpulse-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/11111' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # Web API with integrated frontend (Release build)
+  pmpulse-webapi:
+    image: ghcr.io/toptuk/pmpulse-webapi:latest
+    container_name: pmpulse-webapi
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DOTNET_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - REDIS_CONNECTION_STRING=redis:6379
+      - VIRTUAL_HOST=news.pmi.moscow
+      - VIRTUAL_PORT=8080
+      - VIRTUAL_PATH=/
+    ports:
+      - "8080:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+      pmpulse-silohost:
+        condition: service_healthy
+    networks:
+      - pmpulse-network
+      - pmi_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/feedblock || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+networks:
+  pmpulse-network:
+    driver: bridge
+  pmi_network:
+    external: true
