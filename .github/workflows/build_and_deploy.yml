@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
         - uses: actions/checkout@v2
-        - run: docker login ghcr.io -u $GITHUB_ACTOR -p ${{ secrets.GITHUB_TOKEN }}
+        - run: docker login ghcr.io -u $GITHUB_ACTOR -p ${{ secrets.REPO_TOKEN }}
         - run: ./build-images.sh
         - run: docker image push ghcr.io/toptuk/pmpulse-silohost:latest
         - run: docker image push ghcr.io/toptuk/pmpulse-webapi:release
