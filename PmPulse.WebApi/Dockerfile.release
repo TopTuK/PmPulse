@@ -1,0 +1,53 @@
+# Multi-stage build for release
+FROM node:22-alpine AS webapp-build
+WORKDIR /src/webapp
+
+# Copy webapp package files and install dependencies
+COPY webapp/package*.json ./
+RUN npm ci
+
+# Copy webapp source code
+COPY webapp/ .
+
+# Build webapp to WebApi wwwroot directory
+RUN npm run build
+
+# Build stage for .NET application
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy csproj files and restore dependencies
+COPY ["PmPulse.WebApi/PmPulse.WebApi.csproj", "PmPulse.WebApi/"]
+COPY ["PmPulse.ServiceDefaults/PmPulse.ServiceDefaults.csproj", "PmPulse.ServiceDefaults/"]
+COPY ["PmPulse.AppDomain/PmPulse.AppDomain.csproj", "PmPulse.AppDomain/"]
+COPY ["PmPulse.GrainInterfaces/PmPulse.GrainInterfaces.csproj", "PmPulse.GrainInterfaces/"]
+COPY ["PmPulse.GrainClasses/PmPulse.GrainClasses.csproj", "PmPulse.GrainClasses/"]
+RUN dotnet restore "PmPulse.WebApi/PmPulse.WebApi.csproj"
+
+# Copy source code
+COPY . .
+
+# Copy built webapp from webapp-build stage (vite outputs to ../PmPulse.WebApi/wwwroot/)
+COPY --from=webapp-build /src/PmPulse.WebApi/wwwroot/ ./PmPulse.WebApi/wwwroot/
+
+WORKDIR "/src/PmPulse.WebApi"
+
+# Build the application in Release configuration
+RUN dotnet build "PmPulse.WebApi.csproj" -c Release -o /app/build
+
+# Publish stage
+FROM build AS publish
+RUN dotnet publish "PmPulse.WebApi.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+WORKDIR /app
+
+# Set environment to Production for release configuration
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+EXPOSE 8080
+EXPOSE 8081
+
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "PmPulse.WebApi.dll"]
