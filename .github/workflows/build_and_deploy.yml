@@ -1,0 +1,21 @@
+name: Build and Deploy
+
+on:
+  # Commented out automatic trigger on push
+  # push:
+  #   branches:
+  #     - deploy
+  
+  # Manual trigger
+  workflow_dispatch:
+
+jobs:
+  build-images:
+    name: Build images
+    runs-on: ubuntu-latest
+    steps:
+        - uses: actions/checkout@v2
+        - run: docker login ghcr.io -u $GITHUB_ACTOR -p ${{ secrets.GITHUB_TOKEN }}
+        - run: ./build-images.sh
+        - run: docker image push ghcr.io/toptuk/pmpulse-silohost:latest
+        - run: docker image push ghcr.io/toptuk/pmpulse-webapi:release
