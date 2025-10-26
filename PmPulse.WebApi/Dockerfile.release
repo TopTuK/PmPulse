@@ -27,8 +27,10 @@ RUN dotnet restore "PmPulse.WebApi/PmPulse.WebApi.csproj"
 # Copy source code
 COPY . .
 
-# Copy built webapp from webapp-build stage (vite outputs to ../PmPulse.WebApi/wwwroot/)
-COPY --from=webapp-build /src/PmPulse.WebApi/wwwroot/ ./PmPulse.WebApi/wwwroot/
+# Copy built webapp from webapp-build stage
+# In webapp-build stage, WORKDIR is /src/webapp, vite outputs to ../PmPulse.WebApi/wwwroot
+# So the full path from webapp-build is /src/PmPulse.WebApi/wwwroot
+COPY --from=webapp-build /src/PmPulse.WebApi/wwwroot ./PmPulse.WebApi/wwwroot
 
 WORKDIR "/src/PmPulse.WebApi"
 
