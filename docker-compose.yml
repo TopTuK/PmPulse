@@ -53,10 +53,11 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - DOTNET_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_URLS=http://+:8080;https://+:8443
       - REDIS_CONNECTION_STRING=redis:6379
     ports:
-      - "8080:8080"
+      - "8080:8080"  # HTTP
+      - "8443:8443"  # HTTPS
     depends_on:
       redis:
         condition: service_healthy

@@ -46,7 +46,8 @@ WORKDIR /app
 # Set environment to Production for release configuration
 ENV ASPNETCORE_ENVIRONMENT=Production
 
-EXPOSE 8080
+EXPOSE 8080  # HTTP
+EXPOSE 8443  # HTTPS
 EXPOSE 8081
 
 COPY --from=publish /app/publish .
