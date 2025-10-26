@@ -2,6 +2,7 @@ using PmPulse.WebApi.Models.Configuration;
 using PmPulse.WebApi.Services;
 using Serilog;
 using System.ComponentModel;
+using System.Security.Cryptography.X509Certificates;
 
 static void ConfigureServices(IServiceCollection services)
 {
@@ -28,6 +29,24 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
     var configuration = builder.Configuration;
+
+    // Configure Kestrel for HTTPS with PEM certificates (non-development environments)
+    if (!builder.Environment.IsDevelopment())
+    {
+        var certPath = Environment.GetEnvironmentVariable("ASPNETCORE_Kestrel__Certificates__Default__CertificatePath");
+        var keyPath = Environment.GetEnvironmentVariable("ASPNETCORE_Kestrel__Certificates__Default__CertificateKeyPath");
+        
+        if (!string.IsNullOrEmpty(certPath) && !string.IsNullOrEmpty(keyPath) && File.Exists(certPath) && File.Exists(keyPath))
+        {
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ConfigureHttpsDefaults(httpsOptions =>
+                {
+                    httpsOptions.ServerCertificate = X509Certificate2.CreateFromPemFile(certPath, keyPath);
+                });
+            });
+        }
+    }
 
     // Configure options
     ConfigureOptions(builder.Services, configuration);

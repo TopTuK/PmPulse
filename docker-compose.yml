@@ -55,9 +55,13 @@ services:
       - DOTNET_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080;https://+:8443
       - REDIS_CONNECTION_STRING=redis:6379
+      - ASPNETCORE_Kestrel__Certificates__Default__CertificatePath=/certs/pmi.moscow.crt
+      - ASPNETCORE_Kestrel__Certificates__Default__CertificateKeyPath=/certs/pmi.moscow.key
     ports:
       - "8080:8080"  # HTTP
       - "8443:8443"  # HTTPS
+    volumes:
+      - ./certs:/certs:ro
     depends_on:
       redis:
         condition: service_healthy
