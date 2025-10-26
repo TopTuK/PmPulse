@@ -53,9 +53,13 @@ services:
       - VIRTUAL_PORT=8443
       - VIRTUAL_PATH=/
       - VIRTUAL_PROTO=https
+      - ASPNETCORE_Kestrel__Certificates__Default__CertificatePath=/certs/pmi.moscow.crt
+      - ASPNETCORE_Kestrel__Certificates__Default__CertificateKeyPath=/certs/pmi.moscow.key
     ports:
       - "8080:8080"  # HTTP
       - "8443:8443"  # HTTPS
+    volumes:
+      - ./certs:/certs:ro
     depends_on:
       redis:
         condition: service_healthy
