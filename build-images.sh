@@ -22,19 +22,14 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
-echo -e "${BLUE}Step 1/3: Building Orleans Silo Host image...${NC}"
+echo -e "${BLUE}Step 1/2: Building Orleans Silo Host image...${NC}"
 docker build -f PmPulse.FeedSiloHost/Dockerfile -t pmpulse-silohost:latest .
 echo -e "${GREEN}✓ Orleans Silo Host image built successfully${NC}"
 echo ""
 
-echo -e "${BLUE}Step 2/3: Building Web API image...${NC}"
-docker build -f PmPulse.WebApi/Dockerfile -t pmpulse-webapi:latest .
+echo -e "${BLUE}Step 2/2: Building Web API image (release)...${NC}"
+docker build -f PmPulse.WebApi/Dockerfile.release -t pmpulse-webapi:latest .
 echo -e "${GREEN}✓ Web API image built successfully${NC}"
-echo ""
-
-echo -e "${BLUE}Step 3/3: Building Frontend image...${NC}"
-docker build -f webapp/Dockerfile -t pmpulse-front:latest ./webapp
-echo -e "${GREEN}✓ Frontend image built successfully${NC}"
 echo ""
 
 echo "================================"
