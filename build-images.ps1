@@ -16,19 +16,14 @@ try {
     exit 1
 }
 
-Write-Host "Step 1/3: Building Orleans Silo Host image..." -ForegroundColor Blue
+Write-Host "Step 1/2: Building Orleans Silo Host image..." -ForegroundColor Blue
 docker build -f PmPulse.FeedSiloHost/Dockerfile -t pmpulse-silohost:latest .
 Write-Host "✓ Orleans Silo Host image built successfully" -ForegroundColor Green
 Write-Host ""
 
-Write-Host "Step 2/3: Building Web API image..." -ForegroundColor Blue
-docker build -f PmPulse.WebApi/Dockerfile -t pmpulse-webapi:latest .
+Write-Host "Step 2/2: Building Web API image (release)..." -ForegroundColor Blue
+docker build -f PmPulse.WebApi/Dockerfile.release -t pmpulse-webapi:latest .
 Write-Host "✓ Web API image built successfully" -ForegroundColor Green
-Write-Host ""
-
-Write-Host "Step 3/3: Building Frontend image..." -ForegroundColor Blue
-docker build -f webapp/Dockerfile -t pmpulse-front:latest ./webapp
-Write-Host "✓ Frontend image built successfully" -ForegroundColor Green
 Write-Host ""
 
 Write-Host "================================" -ForegroundColor Cyan
