@@ -1,15 +1,24 @@
 # Multi-stage build for release
 FROM node:22-alpine AS webapp-build
-WORKDIR /src/webapp
+WORKDIR /src
 
 # Copy webapp package files and install dependencies
-COPY webapp/package*.json ./
+COPY webapp/package*.json ./webapp/
+WORKDIR /src/webapp
 RUN npm ci
 
 # Copy webapp source code
 COPY webapp/ .
 
+# Copy WebApi .csproj file to create directory structure (vite needs this for output path)
+WORKDIR /src
+COPY PmPulse.WebApi/PmPulse.WebApi.csproj ./PmPulse.WebApi/
+
+# Create wwwroot directory for vite output
+RUN mkdir -p ./PmPulse.WebApi/wwwroot
+
 # Build webapp to WebApi wwwroot directory
+WORKDIR /src/webapp
 RUN npm run build
 
 # Build stage for .NET application
@@ -28,8 +37,8 @@ RUN dotnet restore "PmPulse.WebApi/PmPulse.WebApi.csproj"
 COPY . .
 
 # Copy built webapp from webapp-build stage
-# In webapp-build stage, WORKDIR is /src/webapp, vite outputs to ../PmPulse.WebApi/wwwroot
-# So the full path from webapp-build is /src/PmPulse.WebApi/wwwroot
+# In webapp-build stage: WORKDIR /src/webapp, vite outputs to ../PmPulse.WebApi/wwwroot
+# This creates /src/PmPulse.WebApi/wwwroot in the webapp-build stage
 COPY --from=webapp-build /src/PmPulse.WebApi/wwwroot ./PmPulse.WebApi/wwwroot
 
 WORKDIR "/src/PmPulse.WebApi"
