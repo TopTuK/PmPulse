@@ -200,7 +200,7 @@ docker-compose down
 
 The application will be available at:
 - Frontend: `http://localhost:5173`
-- API: `http://localhost:5000`
+- API: `http://localhost:5066`
 
 ## Project Structure
 
@@ -312,9 +312,10 @@ Configuration files:
 
 ## API Endpoints
 
-- `GET /api/feedblock`: Get all feed blocks
-- `GET /api/feedblock/{id}`: Get specific feed block
-- `GET /api/feedpost`: Get feed posts
+- `GET /FeedBlock/GetAllFeedBlocks`: Get all feed blocks
+- `GET /FeedBlock/GetFeedBlock?slug={slug}`: Get specific feed block by slug
+- `GET /FeedPost/GetBlockFeedPosts?slug={slug}`: Get feed posts for a block
+- `GET /FeedPost/GetFeedPosts?slug={slug}`: Get feed posts for a specific feed
 - Additional endpoints in `PmPulse.WebApi/Controllers/`
 
 ## Contributing
