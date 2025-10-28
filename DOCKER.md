@@ -307,7 +307,7 @@ Add health checks to docker-compose.yml:
 services:
   pmpulse-webapi:
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/FeedBlock/GetAllFeedBlocks"]
       interval: 30s
       timeout: 10s
       retries: 3

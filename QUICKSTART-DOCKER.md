@@ -87,7 +87,7 @@ docker ps --format "table {{.Names}}\t{{.Status}}"
 The docker-compose configuration includes automatic health checks:
 
 - **Orleans Silo**: Checks port 11111 connectivity
-- **Web API**: Checks `/api/feedblock` endpoint
+- **Web API**: Checks `/FeedBlock/GetAllFeedBlocks` endpoint
 - **Frontend**: Checks Nginx is serving on port 80
 
 Services will wait for dependencies to be healthy before starting.
