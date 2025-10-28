@@ -20,8 +20,4 @@
     <ProjectReference Include="..\PmPulse.ServiceDefaults\PmPulse.ServiceDefaults.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="wwwroot\**\*" CopyToPublishDirectory="PreserveNewest" />
-  </ItemGroup>
-
 </Project>
