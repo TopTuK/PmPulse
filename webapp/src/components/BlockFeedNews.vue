@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import useFeedService from '@/services/feedService'
 import { formateDateTime, truncateHtmlText } from '@/utils'
+import FeedPostModalView from './FeedPostModalView.vue'
 
 const { t } = useI18n()
 
@@ -18,7 +19,7 @@ const columns = [
     {
         key: 'postText',
         label: t('post.post_column_title'),
-        width: '400px'
+        width: '70%'
     },
     {
         key: 'postDate',
@@ -26,7 +27,8 @@ const columns = [
     },
     {
         key: 'showPost',
-        label: ' '
+        label: ' ',
+        width: '10px'
     }
 ]
 
@@ -64,8 +66,7 @@ const viewFeed = () => {
     }
 }
 
-const showFeedPost = () => {
-    const url = post.value.postUrl;
+const showFeedPost = (url) => {
     if (url) {
         window.open(url, '_blank')
     }
@@ -82,6 +83,7 @@ const showPost = (post_obj) => {
 
 const closePost = () => {
     post.value = null
+    isShowPost.value = false
 }
 
 onBeforeMount(async () => {
@@ -91,49 +93,13 @@ onBeforeMount(async () => {
 
 <template>
     <div class="flex-1 border border-gray-400">
-        <va-modal 
+        <FeedPostModalView
             v-model="isShowPost"
+            :post="post"
+            :feed-title="props.feed.title"
             @close="closePost"
-            blur
-            hide-default-actions
-            no-dismiss
-        >
-            <div class="flex flex-col gap-2 m-2">
-                <div class="flex flex-row justify-between items-center mb-2">
-                    <span class="flex text-xl">
-                        {{ $t("feed.feed_title") }}: {{ props.feed.title }}
-                    </span>
-                    <span class="flex">
-                        {{ formateDateTime(post.postDate) }}
-                    </span>
-                </div>
-                <div v-if="post.postImage" class="flex flex-row items-center justify-center border-2 border-indigo-500 rounded-xl shadow-md p-4 my-4">
-                    <va-image
-                        fit="contain"
-                        class="flex h-64 w-64"
-                        :src="post.postImage"
-                    />                    
-                </div>
-                <div class="flex flex-row border-2 border-indigo-500 bg-gradient-to-br from-indigo-50 to-blue-100 rounded-xl shadow-md p-4 my-4">
-                    <div 
-                        v-html="post.postText"
-                        class="prose max-w-none text-lg text-gray-800 leading-relaxed"
-                        style="font-family: 'Merriweather', serif;"
-                    />
-                </div>
-            </div>
-
-            <template #footer>
-                <div class="flex flex-row gap-2">
-                    <va-button @click="showFeedPost">
-                        {{ $t("post.open_post") }}
-                    </va-button>
-                    <va-button @click="isShowPost = false">
-                        {{ $t("common.close_title") }}
-                    </va-button>
-                </div>
-            </template>
-        </va-modal>
+            @open-post="showFeedPost"
+        />
 
         <va-card>
             <va-card-title>
@@ -180,12 +146,14 @@ onBeforeMount(async () => {
                             <div class="flex flex-row">
                                 <va-data-table
                                     :striped="true"
-                                    class="flex"
+                                    class="flex flex-1"
                                     :columns="columns"
                                     :items="feedPosts.posts"
                                 >
                                     <template #cell(postText)="{ value }">
-                                        <div v-html="truncateHtmlText(value, 45)" />
+                                        <div class="flex line-clamp-1">
+                                            <div v-html="truncateHtmlText(value, 45)" />
+                                        </div>
                                     </template>
 
                                     <template #cell(postDate)="{ value }">

@@ -62,7 +62,7 @@ onMounted(async () => {
                 <div class="flex flex-row justify-center items-center mx-4 my-2">
                     <div
                         v-if="feedBlock.feeds.length > 0"
-                        class="flex-1 grid gap-2 grid-cols-2 bg-white"
+                        class="flex-1 grid gap-2 grid-cols-1 xl:grid-cols-2 bg-white"
                     >
                         <BlockFeedNews 
                             v-for="feed in feedBlock.feeds"
