@@ -103,11 +103,11 @@ onBeforeMount(async () => {
 
         <va-card>
             <va-card-title>
-                <div class="flex w-full flex-row justify-between items-center">
-                    <span class="flex text-xl font-bold">
+                <div class="flex w-full flex-col md:flex-row md:justify-between md:items-center gap-3">
+                    <span class="flex text-lg md:text-xl font-bold break-words">
                         {{ props.feed.title }}
                     </span>
-                    <div class="flex flex-row gap-2">
+                    <div class="flex flex-row gap-2 justify-start md:justify-end">
                         <va-button
                             size="small" 
                             round
@@ -127,37 +127,38 @@ onBeforeMount(async () => {
                             @click="showFeed"
                         />
                     </div>
-                    
                 </div>
             </va-card-title>
 
             <va-card-content>
-                <div class="flex flex-row justify-center items-center">
-                    <div v-if="isLoading" class="flex justify-center items-center">
+                <div class="flex flex-col justify-center items-center">
+                    <div v-if="isLoading" class="flex justify-center items-center py-8">
                         <va-progress-circle indeterminate />
                     </div>
-                    <div v-else class="flex flex-row justify-between items-center">
-                        <div v-if="feedPosts" class="flex flex-col">
-                            <div class="flex flex-row">
-                                <span class="text-sm font-bold">
+                    <div v-else class="flex flex-col w-full">
+                        <div v-if="feedPosts" class="flex flex-col w-full">
+                            <div class="flex flex-col mb-3">
+                                <span class="text-xs md:text-sm font-bold break-words">
                                     {{ $t("feed.last_sync_date_title") }}: {{ formateDateTime(feedPosts.syncDate) }}
                                 </span>
                             </div>
-                            <div class="flex flex-row">
+                            <div class="flex flex-row w-full overflow-x-auto">
                                 <va-data-table
                                     :striped="true"
-                                    class="flex flex-1"
+                                    class="flex flex-1 min-w-full md:min-w-0"
                                     :columns="columns"
                                     :items="feedPosts.posts"
                                 >
                                     <template #cell(postText)="{ value }">
-                                        <div class="flex line-clamp-1">
+                                        <div class="flex line-clamp-1 max-w-[200px] sm:max-w-[300px] md:max-w-none">
                                             <div v-html="truncateHtmlText(value, 45)" />
                                         </div>
                                     </template>
 
                                     <template #cell(postDate)="{ value }">
-                                        {{ formateDateTime(value) }}
+                                        <span class="text-xs md:text-sm whitespace-nowrap">
+                                            {{ formateDateTime(value) }}
+                                        </span>
                                     </template>
 
                                     <template #cell(showPost)="{ rowData }">
@@ -174,15 +175,15 @@ onBeforeMount(async () => {
                             </div>
                         </div>
 
-                        <div v-else class="flex flex-col justify-center items-center p-4">
-                            <div class="flex flex-row gap-4 justify-center items-center">
-                                <va-icon name="error_outline" size="36px" color="danger" />
-                                <span class="mt-2 text-base font-semibold text-red-600">
+                        <div v-else class="flex flex-col justify-center items-center p-4 md:p-6">
+                            <div class="flex flex-col md:flex-row gap-2 md:gap-4 justify-center items-center">
+                                <va-icon name="error_outline" size="32px" color="danger" />
+                                <span class="text-sm md:text-base font-semibold text-red-600 text-center">
                                     {{ $t(feed.feed_error_load_title) }}
                                 </span>
                             </div>
-                            <div class="flex flex-row justify-center items-center">
-                                <span class="text-sm text-gray-500 mt-1">
+                            <div class="flex flex-row justify-center items-center mt-2">
+                                <span class="text-xs md:text-sm text-gray-500 text-center px-2">
                                     {{ $t(feed.feed_error_load_description) }}
                                 </span>
                             </div>
