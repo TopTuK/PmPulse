@@ -6,7 +6,7 @@ import axios from "axios";
 };*/
 
 const api = axios.create({
-    baseURL: '/'  // Base URL for all API requests
+    baseURL: '/'  // Base URL for same-domain API requests
 });
 // api.interceptors.request.use(requestInterceptor);
 
