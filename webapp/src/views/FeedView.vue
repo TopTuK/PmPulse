@@ -91,16 +91,16 @@ onBeforeMount(async () => {
         <div v-else class="flex flex-col m-4">
             <div v-if="feed" class="flex flex-col">
                 <div
-                    class="flex flex-row items-center justify-between px-8 py-6 rounded-xl shadow-lg"
+                    class="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-0 px-4 py-4 md:px-8 md:py-6 rounded-xl shadow-lg"
                     style="background: linear-gradient(90deg, #5e6272 0%, #899498 100%); border-bottom: 4px solid #b3bebe;"
                 >
                     <p
-                        class="text-3xl font-extrabold tracking-wide"
+                        class="text-xl md:text-3xl font-extrabold tracking-wide text-center md:text-left"
                         style="color: #f5e6e8; text-shadow: 0 2px 12px rgba(80, 50, 100, 0.25); font-family: 'Merriweather', serif;"
                     >
                         {{ feed.feed.title }}
                     </p>
-                    <div class="flex flex-row gap-3 items-center justify-center">
+                    <div class="flex flex-row flex-wrap gap-3 items-center justify-center md:justify-end mt-1 md:mt-0">
                         <va-button
                             class="flex bg-gradient-to-br from-[#767a8a] to-[#a8b4b2] shadow"
                             icon="arrow_back"
@@ -118,7 +118,7 @@ onBeforeMount(async () => {
                             @click="loadFeed"
                         />
                         <span
-                            class="flex items-center text-xs font-bold px-3 py-1 rounded-full shadow-md"
+                            class="flex items-center text-xs font-bold px-3 py-1 rounded-full shadow-md text-center whitespace-normal break-words max-w-full"
                             style="background: #b3bebe; color: #2d3440; font-family: 'Merriweather', serif;"
                         >
                             {{ $t("feed.last_sync_date_title") }}: {{ formateDateTime(feed.feedPosts.syncDate) }}
@@ -132,7 +132,7 @@ onBeforeMount(async () => {
                 <div class="flex flex-row items-center ml-2">
                     <div class="flex flex-col">
                         <div class="flex flex-row">
-                            <p class="text-base text-[#59405c] font-medium">
+                            <p class="text-sm md:text-base text-[#59405c] font-medium">
                                 {{ feed.feed.description }}
                             </p>
                         </div>
@@ -140,12 +140,12 @@ onBeforeMount(async () => {
                 </div>
                 <div class="border-t border-b-4 border-b-[#b3bebe] border-t-[#899498] my-4"></div>
 
-                <div class="flex flex-row justify-center border-1 rounded-xl">
-                    <div class="flex flex-col">
-                        <div class="flex flex-row">
+                <div class="flex w-full border rounded-xl overflow-hidden">
+                    <div class="flex w-full">
+                        <div class="flex w-full overflow-x-auto">
                             <va-data-table
                                 :striped="true"
-                                class="flex rounded-xl"
+                                class="min-w-[640px] md:min-w-0 rounded-none"
                                 :columns="columns"
                                 :items="feed.feedPosts.posts"
                             >
@@ -177,13 +177,13 @@ onBeforeMount(async () => {
                 <div class="flex flex-col justify-center items-center gap-4">
                     <va-icon
                         name="error_outline"
-                        size="48px"
+                        size="40px"
                         color="danger"
                     />
-                    <span class="text-xl font-semibold text-red-600">
+                    <span class="text-lg md:text-xl font-semibold text-red-600 text-center">
                         {{ $t('feed.feed_error_load_title') }}
                     </span>
-                    <span class="text-base text-gray-500">
+                    <span class="text-sm md:text-base text-gray-500 text-center">
                         {{ $t('feed.feed_error_load_description') }}
                     </span>
                     <va-button
