@@ -10,6 +10,9 @@ if (startupType == "docker")
     // Add Redis for Orleans clustering
     var redis = builder.AddRedis("redis");
 
+    // Build the webapp frontend using NPM (Vite) for static assets
+    var webappBuild = builder.AddNpmApp("webapp-build", "../webapp", "build");
+
     // Start Orleans Silo Host in Docker
     var feedSiloHost = builder.AddDockerfile("pmpulse-silohost", "..", "PmPulse.FeedSiloHost/Dockerfile")
         .WithHttpEndpoint(port: 11111, targetPort: 11111, name: "silo")
@@ -21,11 +24,12 @@ if (startupType == "docker")
         .WithReference(redis);
 
     // Start frontend in Docker
-    var front = builder.AddDockerfile("front", "../webapp", "Dockerfile")
-        .WithHttpEndpoint(port: 5173, targetPort: 80, name: "http");
+    // var front = builder.AddDockerfile("front", "../webapp", "Dockerfile")
+        // .WithHttpEndpoint(port: 5173, targetPort: 80, name: "http");
 
     // Start Web API in Docker
     var webApi = builder.AddDockerfile("pmpulse-webapi", "..", "PmPulse.WebApi/Dockerfile")
+        .WaitFor(webappBuild)
         .WithHttpEndpoint(port: 8080, targetPort: 8080, name: "http")
         .WithEnvironment("ASPNETCORE_ENVIRONMENT", IsNotDevelopment ? "Development" : "Docker")
         .WithEnvironment("DOTNET_ENVIRONMENT", IsNotDevelopment ? "Development" : "Docker")
