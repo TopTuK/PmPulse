@@ -92,8 +92,8 @@ onMounted(async () => {
                 </div>
 
                 <!-- Feeds Grid -->
-                <div v-if="feedBlock.feeds && feedBlock.feeds.length > 0" class="w-full">
-                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 w-full">
+                <div v-if="feedBlock.feeds && feedBlock.feeds.length > 0" class="flex flex-col w-full">
+                    <div class="flex flex-row grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 w-full">
                         <BlockFeedNews 
                             v-for="feed in feedBlock.feeds"
                             :key="feed.slug"
