@@ -1,11 +1,15 @@
 <script setup>
 import { ref, onBeforeMount } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import { useFeedBlockStore } from '@/stores/feedBlockStore'
 import useFeedBlockService from '@/services/feedBlockService'
+//import LensFilter from '@/components/LensFilter.vue'
+
+const { t } = useI18n()
 
 const feedBlockStore = useFeedBlockStore()
-const { currentBlockSlug } = storeToRefs(feedBlockStore)
+const { currentBlockSlug, showFavoriteFeeds } = storeToRefs(feedBlockStore)
 
 const blocks = ref(null)
 const isLoading = ref(false)
@@ -45,21 +49,26 @@ onBeforeMount(async () => {
                 class="text-white"
             />
             <span class="ml-2 sm:ml-3 text-sm sm:text-base text-gray-300">
-                Loading...
+                {{ $t('feed_block.loading') }}
             </span>
         </div>
         
-        <!-- Select Component -->
-        <VaSelect
+        <!-- Select and checkbox Component -->
+         <div
             v-else-if="blocks && blocks.length > 0"
-            v-model="currentBlockSlug"
-            :options="blocks"
-            text-by="title"
-            value-by="slug"
-            class="feed-block-select"
-            placeholder="Select feed block"
-        />
-        
+            class="feed-block-select flex items-center justify-center gap-3"
+         >
+            <!--<LensFilter class="flex-shrink-0" />-->
+            <VaSelect
+                v-model="currentBlockSlug"
+                :options="blocks"
+                text-by="title"
+                value-by="slug"
+                :placeholder="$t('feed_block.select_placeholder')"
+            />
+            <VaCheckbox v-model="showFavoriteFeeds" />
+         </div>
+
         <!-- Empty State -->
         <div v-else class="flex items-center justify-center py-2 sm:py-3">
             <div class="flex items-center gap-2">
@@ -77,7 +86,7 @@ onBeforeMount(async () => {
                     />
                 </svg>
                 <span class="text-xs sm:text-sm text-gray-400">
-                    No feed blocks found
+                    {{ $t('feed_block.no_blocks_found') }}
                 </span>
             </div>
         </div>

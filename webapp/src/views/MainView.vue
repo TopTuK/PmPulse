@@ -1,17 +1,34 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useFeedBlockStore } from '@/stores/feedBlockStore'
 import useFeedBlockService from '@/services/feedBlockService'
 import BlockFeedNews from '@/components/BlockFeedNews.vue'
 
+const { t } = useI18n()
+
 const feedBlockStore = useFeedBlockStore()
 const feedBlockService = useFeedBlockService()
 
 const { currentBlockSlug } = storeToRefs(feedBlockStore)
+const { showFavoriteFeeds } = storeToRefs(feedBlockStore)
+const { favoriteFeeds } = storeToRefs(feedBlockStore)
 
 const isLoading = ref(false)
 const feedBlock = ref(null)
+
+const filteredFeeds = computed(() => {
+    if (!feedBlock.value || !feedBlock.value.feeds) {
+        return []
+    }
+    
+    if (showFavoriteFeeds.value) {
+        return feedBlock.value.feeds.filter(feed => favoriteFeeds.value.includes(feed.slug))
+    }
+    
+    return feedBlock.value.feeds
+})
 
 watch(currentBlockSlug, async (newVal) => {
     if (newVal) {
@@ -55,7 +72,7 @@ onMounted(async () => {
                     <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 animate-pulse"></div>
                 </div>
             </div>
-            <p class="mt-6 text-lg font-medium text-gray-600">Loading feed block...</p>
+            <p class="mt-6 text-lg font-medium text-gray-600">{{ $t('feed_block.loading_block') }}</p>
         </div>
 
         <!-- Content State -->
@@ -92,10 +109,10 @@ onMounted(async () => {
                 </div>
 
                 <!-- Feeds Grid -->
-                <div v-if="feedBlock.feeds && feedBlock.feeds.length > 0" class="flex flex-col w-full">
+                <div v-if="filteredFeeds && filteredFeeds.length > 0" class="flex flex-col w-full">
                     <div class="flex flex-row grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 w-full">
                         <BlockFeedNews 
-                            v-for="feed in feedBlock.feeds"
+                            v-for="feed in filteredFeeds"
                             :key="feed.slug"
                             :feed="feed"
                             class="w-full"
@@ -113,10 +130,10 @@ onMounted(async () => {
                         </div>
                         <div class="text-center">
                             <h3 class="text-lg sm:text-xl font-bold text-red-700 mb-2">
-                                No feeds available
+                                {{ $t('feed_block.no_feeds_available_title') }}
                             </h3>
                             <p class="text-sm sm:text-base text-red-600/80 max-w-md">
-                                This feed block doesn't contain any feeds at the moment.
+                                {{ $t('feed_block.no_feeds_available_description') }}
                             </p>
                         </div>
                     </div>

@@ -1,18 +1,22 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import Cookies from 'js-cookie'
+// import Cookies from 'js-cookie'
 
 export const useFeedBlockStore = defineStore('feedBlocksStore', () => {
-    const CURRENT_BLOCK_SLUG_COOKIE = 'block_slug'
+    const currentBlockSlug = ref('main')
 
-    const currentBlockSlug = ref(Cookies.get(CURRENT_BLOCK_SLUG_COOKIE) ?? 'main')
+    const feedBlockFilter = ref(null)
 
-    const setCurrentBlockSlug = (blockSlug) => {
-        Cookies.set(CURRENT_BLOCK_SLUG_COOKIE, blockSlug)
-        currentBlockSlug.value = blockSlug
-    }
-    
+    const showFavoriteFeeds = ref(false)
+    const favoriteFeeds = ref([])
+
     return {
-        currentBlockSlug, setCurrentBlockSlug
+        currentBlockSlug,
+        feedBlockFilter,
+        showFavoriteFeeds, favoriteFeeds
     }
+},
+{
+    persist: true,
+    pick: ['currentBlockSlug', 'favoriteFeeds']
 })
