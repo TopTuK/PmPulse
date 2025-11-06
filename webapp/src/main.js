@@ -13,6 +13,7 @@ import { createI18n } from 'vue-i18n'
 import messages from '@/locs/messages.js'
 
 import { createPinia } from 'pinia'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
 import { createGtag } from 'vue-gtag';
 
@@ -27,6 +28,7 @@ const i18n = createI18n({
 })
 
 const pinia = createPinia()
+pinia.use(piniaPluginPersistedstate)
 
 const gtag = createGtag({
     tagId: "G-GEC54SP4WL"

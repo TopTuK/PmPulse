@@ -1,10 +1,12 @@
 <script setup>
-import { ref, onBeforeMount } from 'vue'
+import { ref, computed, onBeforeMount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { storeToRefs } from 'pinia'
 import useFeedService from '@/services/feedService'
 import { formateDateTime, truncateHtmlText } from '@/utils'
 import FeedPostModalView from './FeedPostModalView.vue'
+import { useFeedBlockStore } from '@/stores/feedBlockStore'
 
 const { t } = useI18n()
 
@@ -14,6 +16,11 @@ const props = defineProps({
         required: true,
     },
 })
+
+const feedBlockStore = useFeedBlockStore()
+const { favoriteFeeds } = storeToRefs(feedBlockStore)
+
+const isFavorite = computed(() => favoriteFeeds.value.includes(props.feed.slug))
 
 const columns = [
     {
@@ -85,6 +92,17 @@ const closePost = () => {
     isShowPost.value = false
 }
 
+const addRemoveFavoriteFeed = () => {
+    if (favoriteFeeds.value.includes(props.feed.slug)) {
+        favoriteFeeds.value = favoriteFeeds.value.filter(slug => slug !== props.feed.slug)
+        console.log('BlockFeedNews::addRemoveFavoriteFeed: removed favorite feed. Slug:', props.feed.slug)
+    }
+    else {
+        favoriteFeeds.value.push(props.feed.slug)
+        console.log('BlockFeedNews::addRemoveFavoriteFeed: added favorite feed. Slug:', props.feed.slug)
+    }
+}
+
 onBeforeMount(async () => {
     await loadFeed()
 })
@@ -122,20 +140,34 @@ onBeforeMount(async () => {
                     </div>
                     
                     <!-- Action Buttons -->
-                    <div class="flex flex-row gap-2 justify-start md:justify-end">
+                    <div class="flex flex-row gap-2 justify-start md:justify-end feed-action-buttons">
                         <button
                             @click="loadFeed"
-                            class="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105"
-                            title="Refresh"
+                            class="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 feed-action-button"
+                            :title="$t('feed.refresh_title')"
                         >
                             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
                         </button>
                         <button
+                            @click="addRemoveFavoriteFeed"
+                            class="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 feed-action-button"
+                            :title="isFavorite ? $t('feed.remove_favorite_title') : $t('feed.add_favorite_title')"
+                        >
+                            <!-- Filled star icon when in favorites -->
+                            <svg v-if="isFavorite" class="w-5 h-5 text-yellow-300" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                            </svg>
+                            <!-- Outline star icon when not in favorites -->
+                            <svg v-else class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                        </button>
+                        <button
                             @click="viewFeed"
-                            class="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105"
-                            title="Open in Telegram"
+                            class="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 feed-action-button"
+                            :title="$t('feed.open_in_telegram_title')"
                         >
                             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -143,8 +175,8 @@ onBeforeMount(async () => {
                         </button>
                         <button
                             @click="showFeed"
-                            class="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105"
-                            title="View Full Feed"
+                            class="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 feed-action-button"
+                            :title="$t('feed.view_full_feed_title')"
                         >
                             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -169,7 +201,7 @@ onBeforeMount(async () => {
                         <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 animate-pulse"></div>
                     </div>
                 </div>
-                <p class="mt-4 text-sm font-medium text-gray-600">Loading feed posts...</p>
+                <p class="mt-4 text-sm font-medium text-gray-600">{{ $t('feed.loading_posts') }}</p>
             </div>
 
             <!-- Content State -->
@@ -287,5 +319,14 @@ onBeforeMount(async () => {
 :deep(.feed-table-modern .va-data-table) {
     overflow-x: hidden !important;
     width: 100% !important;
+}
+
+.feed-action-buttons {
+    overflow-y: hidden !important;
+}
+
+.feed-action-button {
+    overflow-y: hidden !important;
+    overflow-x: hidden !important;
 }
 </style>
