@@ -14,6 +14,8 @@ import messages from '@/locs/messages.js'
 
 import { createPinia } from 'pinia'
 
+import { createGtag } from 'vue-gtag';
+
 /* CREATE Section */
 const vuestic = createVuestic()
 
@@ -26,6 +28,10 @@ const i18n = createI18n({
 
 const pinia = createPinia()
 
+const gtag = createGtag({
+    tagId: "G-GEC54SP4WL"
+})
+
 // Create APP
 const app = createApp(App)
 
@@ -34,6 +40,7 @@ app.use(vuestic)
 app.use(i18n)
 app.use(pinia)
 app.use(router)
+app.use(gtag)
 
 /* MOUNT APP */
 app.mount('#app')
