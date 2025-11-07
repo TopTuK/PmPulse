@@ -68,7 +68,7 @@ const handleBlur = () => {
         <!-- Tooltip Input Container -->
         <div
             v-if="isExpanded"
-            class="absolute top-full left-0 mt-2 z-50 flex items-center gap-2 min-w-[300px] p-2 rounded-lg bg-white border border-gray-200 shadow-lg"
+            class="absolute top-full left-0 mt-2 z-50 flex items-center gap-2 w-[calc(100vw-2rem)] sm:min-w-[280px] sm:w-auto md:min-w-[300px] max-w-[400px] p-2 rounded-lg bg-white border border-gray-200 shadow-lg"
         >
             <!-- Lens Icon in tooltip -->
             <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 shadow-sm flex-shrink-0">

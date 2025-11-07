@@ -222,8 +222,8 @@ onBeforeMount(async () => {
                     </div>
 
                     <!-- Data Table Container -->
-                    <div class="rounded-xl overflow-hidden border border-gray-200/50 shadow-lg bg-white/80 backdrop-blur-sm">
-                        <div class="overflow-hidden w-full">
+                    <div class="rounded-xl overflow-hidden lg:overflow-x-hidden border border-gray-200/50 shadow-lg bg-white/80 backdrop-blur-sm">
+                        <div class="overflow-hidden lg:overflow-x-hidden w-full max-w-full">
                             <va-data-table
                                 :striped="true"
                                 class="feed-table-modern w-full"
@@ -317,8 +317,47 @@ onBeforeMount(async () => {
 }
 
 :deep(.feed-table-modern .va-data-table) {
-    overflow-x: hidden !important;
+    overflow-x: auto !important;
     width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Disable horizontal scrollbar on large devices */
+@media (min-width: 1024px) {
+    :deep(.feed-table-modern .va-data-table) {
+        overflow-x: hidden !important;
+    }
+    
+    :deep(.feed-table-modern .va-data-table__table-wrapper) {
+        overflow-x: hidden !important;
+    }
+    
+    :deep(.feed-table-modern .va-data-table__table) {
+        width: 100% !important;
+        max-width: 100% !important;
+        table-layout: fixed !important;
+    }
+    
+    /* Ensure table cells wrap content properly on large screens */
+    :deep(.feed-table-modern .va-data-table__table tbody td) {
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        overflow: hidden !important;
+    }
+    
+    /* Post text column - allow wrapping */
+    :deep(.feed-table-modern .va-data-table__table tbody td:first-child) {
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        max-width: 100% !important;
+    }
+    
+    /* Date column - prevent overflow */
+    :deep(.feed-table-modern .va-data-table__table tbody td:last-child) {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
 }
 
 .feed-action-buttons {
