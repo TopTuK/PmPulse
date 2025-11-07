@@ -33,6 +33,7 @@ const messages = {
             no_blocks_found: "No feed blocks found",
             no_feeds_available_title: "No feeds available",
             no_feeds_available_description: "This feed block doesn't contain any feeds at the moment.",
+            show_favorites_tooltip: "Show favoritest",
         },
         search: {
             placeholder: "Search...",
@@ -108,6 +109,7 @@ const messages = {
             no_blocks_found: "Блоки лент не найдены",
             no_feeds_available_title: "Ленты недоступны",
             no_feeds_available_description: "Этот блок ленты не содержит лент в данный момент.",
+            show_favorites_tooltip: "Показать избранное",
         },
         search: {
             placeholder: "Поиск...",

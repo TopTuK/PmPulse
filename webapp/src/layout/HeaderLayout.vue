@@ -29,8 +29,8 @@ import FeedBlockSelector from '@/components/FeedBlockSelector.vue'
 
                 <!-- Controls Section -->
                 <div class="relative w-full sm:w-auto flex items-center justify-end gap-3">
-                    <div class="w-full sm:w-auto bg-gray-800/50 backdrop-blur-sm rounded-xl px-4 py-3 border border-gray-700/50 shadow-inner">
-                        <FeedBlockSelector class="w-full sm:w-auto min-w-[220px]" />
+                    <div class="w-full sm:w-auto bg-gray-800/50 backdrop-blur-sm rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-700/50 shadow-inner">
+                        <FeedBlockSelector class="w-full sm:w-auto sm:min-w-[220px]" />
                     </div>
                 </div>
             </div>
