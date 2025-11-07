@@ -14,20 +14,38 @@ const feedBlockService = useFeedBlockService()
 const { currentBlockSlug } = storeToRefs(feedBlockStore)
 const { showFavoriteFeeds } = storeToRefs(feedBlockStore)
 const { favoriteFeeds } = storeToRefs(feedBlockStore)
+const { feedBlockFilter } = storeToRefs(feedBlockStore)
 
 const isLoading = ref(false)
 const feedBlock = ref(null)
+const feedSlugTitles = ref([])
 
 const filteredFeeds = computed(() => {
     if (!feedBlock.value || !feedBlock.value.feeds) {
         return []
     }
     
+    let feeds = feedBlock.value.feeds
+    
+    // Filter by favorites if enabled
     if (showFavoriteFeeds.value) {
-        return feedBlock.value.feeds.filter(feed => favoriteFeeds.value.includes(feed.slug))
+        feeds = feeds.filter(feed => favoriteFeeds.value.includes(feed.slug))
     }
     
-    return feedBlock.value.feeds
+    // Filter by feedBlockFilter using feedSlugTitles
+    if (feedBlockFilter.value && feedBlockFilter.value.trim() !== '') {
+        const filterLower = feedBlockFilter.value.trim().toLowerCase()
+        const matchingSlugs = feedSlugTitles.value
+            .filter(([title, slug]) => 
+                title.toLowerCase().includes(filterLower) || 
+                slug.toLowerCase().includes(filterLower)
+            )
+            .map(([title, slug]) => slug)
+        
+        feeds = feeds.filter(feed => matchingSlugs.includes(feed.slug))
+    }
+    
+    return feeds
 })
 
 watch(currentBlockSlug, async (newVal) => {
@@ -41,10 +59,22 @@ const loadFeedBlock = async () => {
 
     isLoading.value = true
     try {
-        feedBlock.value = await feedBlockService.getFeedBlock(feedBlockStore.currentBlockSlug)
-        console.log('HomeView::loadFeedBlock: got feed block. ', feedBlock.value)
+        const block = await feedBlockService.getFeedBlock(feedBlockStore.currentBlockSlug)
+        
+        feedBlock.value = block
+
+        // Populate feedSlugTitles with tuples of [title, slug] from feeds
+        feedSlugTitles.value = []
+        if (block && block.feeds && block.feeds.length > 0) {
+            block.feeds.forEach(feed => {
+                feedSlugTitles.value.push([feed.title, feed.slug])
+            })
+        }
+
+        console.log('HomeView::loadFeedBlock: got feed block. ', block)
     }
     catch (error) {
+        feedSlugTitles.value = []
         console.error('HomeView::loadFeedBlock: error: ', error)
     }
     finally {

@@ -42,17 +42,13 @@ const handleBlur = () => {
 </script>
 
 <template>
-    <div 
-        class="relative flex items-center transition-all duration-300 ease-in-out"
-        :class="isExpanded ? 'absolute inset-0 z-10' : 'w-auto'"
-    >
-        <!-- Lens Icon Button (shown when collapsed) -->
+    <div class="relative">
+        <!-- Lens Icon Button (always visible) -->
         <button
-            v-if="!isExpanded"
             @click="toggleExpand"
             class="flex items-center justify-center w-10 h-10 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/50"
             type="button"
-            :aria-label="$t('search.open_search')"
+            :aria-label="isExpanded ? $t('search.close_search') : $t('search.open_search')"
         >
             <svg 
                 class="w-5 h-5 text-white" 
@@ -69,15 +65,15 @@ const handleBlur = () => {
             </svg>
         </button>
 
-        <!-- Expanded Input Container -->
+        <!-- Tooltip Input Container -->
         <div
-            v-else
-            class="flex items-center w-full gap-2"
+            v-if="isExpanded"
+            class="absolute top-full left-0 mt-2 z-50 flex items-center gap-2 min-w-[300px] p-2 rounded-lg bg-white border border-gray-200 shadow-lg"
         >
-            <!-- Lens Icon (in expanded state) -->
-            <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 shadow-md flex-shrink-0">
+            <!-- Lens Icon in tooltip -->
+            <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 shadow-sm flex-shrink-0">
                 <svg 
-                    class="w-5 h-5 text-white" 
+                    class="w-5 h-5 text-gray-600" 
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"
@@ -99,7 +95,7 @@ const handleBlur = () => {
                 @keydown.escape="isExpanded = false"
                 type="text"
                 :placeholder="computedPlaceholder"
-                class="flex-1 h-10 px-4 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/60 shadow-md focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-200"
+                class="flex-1 h-10 px-4 rounded-lg bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             />
         </div>
     </div>
