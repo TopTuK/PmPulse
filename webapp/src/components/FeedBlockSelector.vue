@@ -1,12 +1,12 @@
 <script setup>
 import { ref, onBeforeMount } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useI18n } from 'vue-i18n'
+// import { useI18n } from 'vue-i18n'
 import { useFeedBlockStore } from '@/stores/feedBlockStore'
 import useFeedBlockService from '@/services/feedBlockService'
-//import LensFilter from '@/components/LensFilter.vue'
+import LensFilter from '@/components/LensFilter.vue'
 
-const { t } = useI18n()
+// const { t } = useI18n()
 
 const feedBlockStore = useFeedBlockStore()
 const { currentBlockSlug, showFavoriteFeeds } = storeToRefs(feedBlockStore)
@@ -56,17 +56,22 @@ onBeforeMount(async () => {
         <!-- Select and checkbox Component -->
          <div
             v-else-if="blocks && blocks.length > 0"
-            class="feed-block-select flex items-center justify-center gap-3"
+            class="feed-block-select flex items-center justify-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap"
          >
-            <!--<LensFilter class="flex-shrink-0" />-->
+            <LensFilter class="flex-shrink-0" />
             <VaSelect
                 v-model="currentBlockSlug"
                 :options="blocks"
                 text-by="title"
                 value-by="slug"
                 :placeholder="$t('feed_block.select_placeholder')"
+                class="flex-1 min-w-0"
             />
-            <VaCheckbox v-model="showFavoriteFeeds" />
+            <VaCheckbox 
+                v-model="showFavoriteFeeds"
+                class="flex-shrink-0"
+                :title="$t('feed_block.show_favorites_tooltip')"
+            />
          </div>
 
         <!-- Empty State -->
@@ -216,6 +221,24 @@ onBeforeMount(async () => {
     :deep(.feed-block-select .va-select-option) {
         padding: 0.875rem 1rem !important;
         font-size: 0.875rem !important;
+        min-height: 2.75rem !important;
+    }
+    
+    /* Checkbox mobile styling for better touch targets */
+    :deep(.feed-block-select .va-checkbox) {
+        min-width: 2.5rem !important;
+        min-height: 2.5rem !important;
+    }
+    
+    :deep(.feed-block-select .va-checkbox__input) {
+        width: 1.25rem !important;
+        height: 1.25rem !important;
+    }
+    
+    /* Ensure select takes available space on mobile */
+    :deep(.feed-block-select .va-select) {
+        flex: 1 1 0% !important;
+        min-width: 0 !important;
     }
 }
 
