@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onBeforeMount } from 'vue'
+import { ref, onBeforeMount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import useFeedService from '@/services/feedService'
@@ -21,6 +21,57 @@ const feed = ref(null)
 const isShowPost = ref(false)
 const post = ref(null)
 
+// Update meta tags when feed is loaded
+function updateFeedMetaTags() {
+    if (feed.value && feed.value.feed) {
+        const feedData = feed.value.feed
+        const feedTitle = feedData.title || 'Лента новостей'
+        const feedDescription = feedData.description || `Просмотр ленты новостей: ${feedTitle}. Оставайтесь в курсе последних событий в мире менеджмента.`
+        
+        // Update document title
+        document.title = `${feedTitle} | PM Pulse`
+        
+        // Update meta description
+        let metaDescription = document.querySelector('meta[name="description"]')
+        if (metaDescription) {
+            metaDescription.setAttribute('content', feedDescription)
+        }
+        
+        // Update Open Graph tags
+        updateMetaTag('og:title', `${feedTitle} | PM Pulse`)
+        updateMetaTag('og:description', feedDescription)
+        updateMetaTag('og:url', window.location.href)
+        
+        // Update Twitter Card tags
+        updateMetaTag('twitter:title', `${feedTitle} | PM Pulse`)
+        updateMetaTag('twitter:description', feedDescription)
+        
+        // Update canonical URL
+        let canonical = document.querySelector('link[rel="canonical"]')
+        if (canonical) {
+            canonical.setAttribute('href', window.location.href)
+        }
+    }
+}
+
+// Helper function to update meta tags
+function updateMetaTag(propertyOrName, content) {
+    // Try as property first (for Open Graph)
+    let tag = document.querySelector(`meta[property="${propertyOrName}"]`)
+    if (!tag) {
+        // Try as name (for Twitter and regular meta tags)
+        tag = document.querySelector(`meta[name="${propertyOrName}"]`)
+    }
+    if (tag) {
+        tag.setAttribute('content', content)
+    }
+}
+
+// Watch for feed changes to update meta tags
+watch(feed, () => {
+    updateFeedMetaTags()
+}, { deep: true })
+
 const columns = [
     {
         key: 'postText',
@@ -41,6 +92,8 @@ const loadFeed = async () => {
     isLoading.value = true
     try {
         feed.value = await feedService.getFeedPosts(slug)
+        // Update meta tags after feed is loaded
+        updateFeedMetaTags()
     }
     catch (error) {
         console.error('FeedView::loadFeed: error: ', error)
