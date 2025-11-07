@@ -2,6 +2,8 @@
 
 A modern web service for aggregating, parsing, and summarizing content from multiple RSS feeds and Telegram channels in one unified interface.
 
+🌐 **Live Website**: [https://news.pmi.moscow](https://news.pmi.moscow)
+
 ## Overview
 
 PmPulse helps you stay informed without the noise. Instead of subscribing to hundreds of media accounts and dealing with constant notifications, PmPulse brings all your news sources together in a clean, organized interface.

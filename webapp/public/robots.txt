@@ -1,0 +1,19 @@
+# robots.txt for PM Pulse
+
+User-agent: *
+Allow: /
+
+# Disallow API endpoints
+Disallow: /api/
+
+# Allow all other paths
+Allow: /
+Allow: /about
+Allow: /feed/
+
+# Sitemap location
+Sitemap: https://news.pmi.moscow/sitemap.xml
+
+# Crawl-delay (optional, helps prevent server overload)
+Crawl-delay: 1
+
