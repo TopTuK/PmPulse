@@ -26,6 +26,7 @@ namespace PmPulse.WebApi.Services
 
             public int DelaySeconds { get; init; }
             public int UpdateMinutes { get; init; }
+            public bool InlucdeWeeklyDigest { get; init; }
         }
 
         private readonly ILogger<FeedService> _logger = logger;
@@ -44,6 +45,7 @@ namespace PmPulse.WebApi.Services
                     BlockLimit = f.BlockLimit,
                     DelaySeconds = f.DelaySeconds,
                     UpdateMinutes = f.UpdateMinutes,
+                    InlucdeWeeklyDigest = f.InlucdeWeeklyDigest,
                 })
                 .ToList();
         private readonly IClusterClient _clusterClient = clusterClient;
