@@ -90,5 +90,22 @@ namespace PmPulse.WebApi.Controllers
                 return BadRequest("Feed is not found");
             }
         }
+
+        public async Task<IActionResult> GetWeeklyDigest()
+        {
+            _logger.LogInformation("FeedPostController::GetWeeklyDigest: start get weekly digest. ");
+
+            try
+            {
+                //var weeklyDigest = await _feedService.GetWeeklyDigestAsync();
+                throw new NotImplementedException();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("FeedPostController::GetWeeklyDigest: exception raised. " +
+                    "Message={exMsg}", ex.Message);
+                return BadRequest("Weekly digest is not found");
+            }
+        }
     }
 }
