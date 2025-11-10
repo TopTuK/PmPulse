@@ -5,6 +5,13 @@
         </p>
         <span class="text-gray-400">|</span>
         <router-link 
+            :to="{ name: 'Digest' }" 
+            class="text-gray-300 hover:text-white transition-colors duration-200 underline"
+        >
+            {{ $t('weekly_digest.title') }}
+        </router-link>
+        <span class="text-gray-400">|</span>
+        <router-link 
             to="/about" 
             class="text-gray-300 hover:text-white transition-colors duration-200 underline"
         >

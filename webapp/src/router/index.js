@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 
 const Home = () => import('@/views/MainView.vue')
 const Feed = () => import('@/views/FeedView.vue')
+const WeeklyDigest = () => import('@/views/WeeklyDigestView.vue')
 const About = () => import('@/views/AboutView.vue')
 
 const routes = [
@@ -39,6 +40,16 @@ const routes = [
             keywords: "лента новостей, новости, менеджмент, RSS",
         },
     },
+    {
+        path: "/digest",
+        name: "Digest",
+        component: WeeklyDigest,
+        meta: {
+            title: "Еженедельная сводка | PM Pulse - Агрегатор новостей",
+            description: "Еженедельная сводка самых важных постов из различных источников новостей в мире менеджмента за последние 7 дней. Оставайтесь в курсе ключевых событий и трендов.",
+            keywords: "еженедельная сводка, дайджест новостей, новости менеджмента, агрегатор новостей, сводка новостей, управление, бизнес новости",
+        }
+    }
 ]
 
 // Helper function to update meta tags

@@ -71,7 +71,7 @@ namespace PmPulse.GrainClasses
                 "GrainId={grainId} PostsCount={postsCount}", grainId, _postState.State.Posts.Count());
         }
 
-        public async Task<IFeedPosts?> GetFeedPosts(int limit = -1)
+        public async Task<ISyncedPosts?> GetFeedPosts(int limit = -1)
         {
             var grainId = this.GetPrimaryKey();
             _logger.LogInformation("FeedGrain::GetFeedPosts: start get feed posts. " +
@@ -90,9 +90,37 @@ namespace PmPulse.GrainClasses
                 limit);
             _logger.LogInformation("FeedGrain::GetFeedPosts: return feed posts. " +
                 "GrainId={grainId} PostsSyncDate={syncDate}, PostsCount={postsCount}",
-                grainId, feedPosts.SyncDate, feedPosts.Posts.Count());
+                grainId, feedPosts.LastSyncDate, feedPosts.Posts.Count());
 
             return await Task.FromResult(feedPosts);
+        }
+
+        public Task<IEnumerable<IFeedPost>> GetPostsByDate(DateTime startDate)
+        {
+            var grainId = this.GetPrimaryKey();
+            _logger.LogInformation("FeedGrain::GetWeeklyPosts: start get weekly posts. " +
+                "GrainId={grainId} Start date={startDate}", grainId, startDate.ToString("d"));
+
+            if (_feedState.State.CurrentState == FeedState.None)
+            {
+                _logger.LogWarning("FeedGrain::GetWeeklyPosts: feed grain is not initialized. " +
+                    "GrainId={grainId}", grainId);
+                return Task.FromResult(Enumerable.Empty<IFeedPost>());
+            }
+
+            var feedPosts = _postState.State.Posts
+                .Where(p => p.PostDate >= startDate)
+                .Select(p => FeedPostsFactory.CreateFeedPost(
+                    p.PostText,
+                    p.PostUrl,
+                    p.PostDate,
+                    p.PostImage
+                ))
+                .ToList();
+
+            _logger.LogInformation("FeedGrain::GetWeeklyPosts: return weekly feed posts." +
+                "PostsCount={postsCount}", feedPosts.Count);
+            return Task.FromResult<IEnumerable<IFeedPost>>(feedPosts);
         }
     }
 }

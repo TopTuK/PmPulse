@@ -207,7 +207,7 @@ onBeforeMount(async () => {
             <!-- Content State -->
             <div v-else class="flex flex-col w-full">
                 <!-- Feed Posts -->
-                <div v-if="feedPosts" class="flex flex-col w-full">
+                <div v-if="feedPosts && feedPosts.posts" class="flex flex-col w-full">
                     <!-- Last Sync Badge -->
                     <div class="flex items-center gap-2 mb-4">
                         <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200/50 shadow-sm">
@@ -216,7 +216,7 @@ onBeforeMount(async () => {
                             </svg>
                             <span class="text-xs sm:text-sm font-semibold text-gray-700">
                                 {{ $t("feed.last_sync_date_title") }}: 
-                                <span class="text-blue-600">{{ formateDateTime(feedPosts.syncDate) }}</span>
+                                <span class="text-blue-600">{{ formateDateTime(feedPosts.lastSyncDate) }}</span>
                             </span>
                         </div>
                     </div>
