@@ -133,7 +133,7 @@ onBeforeMount(async () => {
         <FeedPostModalView
             v-model="isShowPost"
             :post="post"
-            :feed-title="feed?.feed?.title || ''"
+            :feed-title="feed?.feed.title || ''"
             @close="closePost"
             @open-post="showFeedPost"
         />
@@ -155,7 +155,7 @@ onBeforeMount(async () => {
 
         <!-- Content State -->
         <div v-else class="flex flex-col w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-            <div v-if="feed" class="flex flex-col w-full">
+            <div v-if="feed.posts" class="flex flex-col w-full">
                 <!-- Header Section with Gradient -->
                 <div 
                     class="relative overflow-hidden rounded-t-xl mb-6"
@@ -215,7 +215,7 @@ onBeforeMount(async () => {
                         </svg>
                         <span class="text-xs sm:text-sm font-semibold text-gray-700">
                             {{ $t("feed.last_sync_date_title") }}: 
-                            <span class="text-blue-600">{{ formateDateTime(feed.feedPosts.syncDate) }}</span>
+                            <span class="text-blue-600">{{ formateDateTime(feed.lastSyncDate) }}</span>
                         </span>
                     </div>
                 </div>
@@ -227,7 +227,7 @@ onBeforeMount(async () => {
                             :striped="true"
                             class="feed-table-modern w-full"
                             :columns="columns"
-                            :items="feed.feedPosts.posts"
+                            :items="feed.posts"
                         >
                             <template #cell(postText)="{ value, rowData }">
                                 <div 

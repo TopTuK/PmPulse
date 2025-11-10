@@ -21,6 +21,9 @@ namespace PmPulse.GrainInterfaces
         Task SetPosts(IEnumerable<IFeedPost> posts);
 
         [Alias("GetFeedPosts")]
-        Task<IFeedPosts?> GetFeedPosts(int limit = -1);
+        Task<ISyncedPosts?> GetFeedPosts(int limit = -1);
+
+        [Alias("GetPostsByDate")]
+        Task<IEnumerable<IFeedPost>> GetPostsByDate(DateTime startDate);
     }
 }

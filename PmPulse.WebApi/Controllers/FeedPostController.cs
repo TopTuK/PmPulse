@@ -39,7 +39,7 @@ namespace PmPulse.WebApi.Controllers
 
                 _logger.LogInformation("FeedPostController::GetBlockFeedPosts: return feed posts. " +
                     "Slug={slug} LastSyncDate={lastSyncDate} PostsCount={postsCount}",
-                    slug, feedPosts.SyncDate, feedPosts.Posts.Count());
+                    feedPosts.Feed.Slug, feedPosts.LastSyncDate, feedPosts.Posts?.Count());
                 return new JsonResult(feedPosts);
             }
             catch (Exception ex)
@@ -76,12 +76,8 @@ namespace PmPulse.WebApi.Controllers
 
                 _logger.LogInformation("FeedPostController::GetBlockFeedPosts: return feed posts. " +
                     "Slug={slug} LastSyncDate={lastSyncDate} PostsCount={postsCount}",
-                    slug, feedPosts.SyncDate, feedPosts.Posts.Count());
-                return new JsonResult(new
-                {
-                    feed,
-                    feedPosts
-                });
+                    feedPosts.Feed.Slug, feedPosts.LastSyncDate, feedPosts.Posts?.Count());
+                return new JsonResult(feedPosts);
             }
             catch (Exception ex)
             {
@@ -97,8 +93,11 @@ namespace PmPulse.WebApi.Controllers
 
             try
             {
-                //var weeklyDigest = await _feedService.GetWeeklyDigestAsync();
-                throw new NotImplementedException();
+                var weeklyDigest = await _feedService.GetWeeklyDigestAsync();
+
+                _logger.LogInformation("FeedPostController::GetWeeklyDigest: return weeky digest. " +
+                    "DigestCount={weeklyDigestCount}", weeklyDigest.Count());
+                return new JsonResult(weeklyDigest);
             }
             catch (Exception ex)
             {

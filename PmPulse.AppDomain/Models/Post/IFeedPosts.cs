@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PmPulse.AppDomain.Models.Feed;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,7 +10,8 @@ namespace PmPulse.AppDomain.Models.Post
 {
     public interface IFeedPosts
     {
-        DateTime SyncDate { get; }
-        IEnumerable<IFeedPost> Posts { get; }
+        IFeed Feed { get; }
+        DateTime? LastSyncDate { get; }
+        IEnumerable<IFeedPost>? Posts { get; }
     }
 }

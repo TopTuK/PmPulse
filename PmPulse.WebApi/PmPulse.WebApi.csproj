@@ -12,12 +12,17 @@
     <PackageReference Include="Microsoft.Orleans.Client" Version="9.2.1" />
     <PackageReference Include="Microsoft.Orleans.Clustering.Redis" Version="9.2.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\PmPulse.AppDomain\PmPulse.AppDomain.csproj" />
     <ProjectReference Include="..\PmPulse.GrainInterfaces\PmPulse.GrainInterfaces.csproj" />
     <ProjectReference Include="..\PmPulse.ServiceDefaults\PmPulse.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
   </ItemGroup>
 
 </Project>
