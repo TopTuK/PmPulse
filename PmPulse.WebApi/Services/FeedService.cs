@@ -28,7 +28,7 @@ namespace PmPulse.WebApi.Services
 
             public int DelaySeconds { get; init; }
             public int UpdateMinutes { get; init; }
-            public bool InlucdeWeeklyDigest { get; init; }
+            public bool IncludeWeeklyDigest { get; init; }
         }
 
         private readonly ILogger<FeedService> _logger = logger;
@@ -47,7 +47,7 @@ namespace PmPulse.WebApi.Services
                     BlockLimit = f.BlockLimit,
                     DelaySeconds = f.DelaySeconds,
                     UpdateMinutes = f.UpdateMinutes,
-                    InlucdeWeeklyDigest = f.InlucdeWeeklyDigest,
+                    IncludeWeeklyDigest = f.IncludeWeeklyDigest,
                 })
                 .ToList();
         private readonly IClusterClient _clusterClient = clusterClient;
@@ -149,7 +149,7 @@ namespace PmPulse.WebApi.Services
             _logger.LogInformation("FeedService::GetWeeklyDigestAsync: start get weekly digest");
 
             var digestFeeds = _feeds
-                .Where(f => f.InlucdeWeeklyDigest)
+                .Where(f => f.IncludeWeeklyDigest)
                 .Select(f => f)
                 .ToList();
             _logger.LogInformation("FeedService::GetWeeklyDigestAsync: got digest feeds. " +
