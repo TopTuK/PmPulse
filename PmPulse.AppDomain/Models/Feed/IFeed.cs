@@ -20,6 +20,6 @@ namespace PmPulse.AppDomain.Models.Feed
         [JsonIgnore] int BlockLimit { get; }
         [JsonIgnore] int DelaySeconds { get; }
         [JsonIgnore] int UpdateMinutes { get; }
-        [JsonIgnore] bool InlucdeWeeklyDigest { get; }
+        [JsonIgnore] bool IncludeWeeklyDigest { get; }
     }
 }

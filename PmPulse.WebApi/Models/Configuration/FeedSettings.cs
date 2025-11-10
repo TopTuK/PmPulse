@@ -13,6 +13,6 @@
         public int BlockLimit { get; set; } = 5;
         public int DelaySeconds { get; set; } = 5;
         public int UpdateMinutes { get; set; } = 5;
-        public bool InlucdeWeeklyDigest { get; set; } = false;
+        public bool IncludeWeeklyDigest { get; set; } = false;
     }
 }
