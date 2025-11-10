@@ -3,6 +3,7 @@ import api from './apiService'
 export default function useFeedService() {
     const GET_BLOCK_FEED_POSTS_ACTION = 'FeedPost/GetBlockFeedPosts'
     const GET_FEED_POSTS_ACTION = 'FeedPost/GetFeedPosts'
+    const GET_WEEKLY_DIGEST_ACTION = 'FeedPost/GetWeeklyDigest'
 
     const getBlockFeedPosts = async (slug) => {
         console.log('FeedService::getBlockFeedPosts: start get feed posts for block', slug)
@@ -52,7 +53,28 @@ export default function useFeedService() {
         }
     }
 
+    const getWeeklyDigest = async () => {
+        console.log('FeedService::getWeeklyDigest: start get weekly digest')
+
+        try {
+            const response = await api.get(GET_WEEKLY_DIGEST_ACTION)
+            if (response.status === 200) {
+                console.log('FeedBlockService::getFeedBlocks: successfully got weekly digest')
+                return response.data
+            }
+            else {
+                console.error('FeedBlockService::getFeedBlocks: error get weekly digest. Status:', response.status)
+                return null
+            }
+        }
+        catch (error) {
+            console.error('FeedService::getWeeklyDigest: exception raised. Error=', error)
+            return null
+        }
+    }
+
     return {
-        getBlockFeedPosts, getFeedPosts
+        getBlockFeedPosts, getFeedPosts,
+        getWeeklyDigest
     }
 }

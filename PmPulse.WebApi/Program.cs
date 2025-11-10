@@ -57,7 +57,9 @@ try
     // Add controllers to the container
     builder.Services
         .AddControllers()
-        .AddNewtonsoftJson();
+        .AddNewtonsoftJson(options =>
+        {
+        });
 
     // Add Orleans client
     builder.UseOrleansClient(client =>

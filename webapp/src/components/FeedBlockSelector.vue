@@ -42,13 +42,13 @@ onBeforeMount(async () => {
 <template>
     <div class="feed-block-selector w-full">
         <!-- Loading State -->
-        <div v-if="isLoading" class="flex justify-center items-center py-2 sm:py-3">
+        <div v-if="isLoading" class="flex justify-center items-center py-2 sm:py-2.5 md:py-3">
             <VaProgressCircle 
                 indeterminate 
                 size="small"
                 class="text-white"
             />
-            <span class="ml-2 sm:ml-3 text-sm sm:text-base text-gray-300">
+            <span class="ml-2 sm:ml-2.5 md:ml-3 text-xs sm:text-sm md:text-base text-gray-300">
                 {{ $t('feed_block.loading') }}
             </span>
         </div>
@@ -56,7 +56,7 @@ onBeforeMount(async () => {
         <!-- Select and checkbox Component -->
          <div
             v-else-if="blocks && blocks.length > 0"
-            class="feed-block-select flex items-center justify-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap"
+            class="feed-block-select flex items-center justify-center gap-2 sm:gap-2.5 md:gap-3 flex-wrap sm:flex-nowrap"
          >
             <LensFilter class="flex-shrink-0" />
             <VaSelect
@@ -75,10 +75,10 @@ onBeforeMount(async () => {
          </div>
 
         <!-- Empty State -->
-        <div v-else class="flex items-center justify-center py-2 sm:py-3">
+        <div v-else class="flex items-center justify-center py-2 sm:py-2.5 md:py-3">
             <div class="flex items-center gap-2">
                 <svg 
-                    class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" 
+                    class="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-gray-400" 
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"
@@ -201,8 +201,8 @@ onBeforeMount(async () => {
     font-weight: 600 !important;
 }
 
-/* Mobile-specific adjustments */
-@media (max-width: 640px) {
+/* Mobile-specific adjustments (below 640px) */
+@media (max-width: 639px) {
     :deep(.feed-block-select .va-input-wrapper__field) {
         padding: 0.625rem 0.875rem !important;
         min-height: 2.75rem !important;
@@ -239,6 +239,18 @@ onBeforeMount(async () => {
     :deep(.feed-block-select .va-select) {
         flex: 1 1 0% !important;
         min-width: 0 !important;
+    }
+}
+
+/* Tablet-specific adjustments (640px - 1023px) */
+@media (min-width: 640px) and (max-width: 1023px) {
+    :deep(.feed-block-select .va-input-wrapper__field) {
+        padding: 0.5rem 0.875rem !important;
+        min-height: 2.5rem !important;
+    }
+    
+    :deep(.feed-block-select .va-dropdown__content) {
+        max-height: 14rem !important;
     }
 }
 

@@ -35,6 +35,15 @@ const messages = {
             no_feeds_available_description: "This feed block doesn't contain any feeds at the moment.",
             show_favorites_tooltip: "Show favoritest",
         },
+        weekly_digest: {
+            title: "Weekly Digest",
+            description: "Your weekly summary of the most important posts from the past 7 days",
+            untitled_feed: "Untitled Feed",
+            no_posts_title: "No Posts Available",
+            no_posts_description: "No posts found for this feed in the past week.",
+            no_digest_title: "No Weekly Digest Available",
+            no_digest_description: "Unable to load the weekly digest. Please try again later.",
+        },
         search: {
             placeholder: "Search...",
             open_search: "Open search",
@@ -110,6 +119,15 @@ const messages = {
             no_feeds_available_title: "Ленты недоступны",
             no_feeds_available_description: "Этот блок ленты не содержит лент в данный момент.",
             show_favorites_tooltip: "Показать избранное",
+        },
+        weekly_digest: {
+            title: "Еженедельная сводка",
+            description: "Ваша еженедельная сводка самых важных постов за последние 7 дней",
+            untitled_feed: "Лента без названия",
+            no_posts_title: "Посты отсутствуют",
+            no_posts_description: "Для этой ленты не найдено постов за последнюю неделю.",
+            no_digest_title: "Еженедельная сводка недоступна",
+            no_digest_description: "Не удалось загрузить еженедельную сводку. Попробуйте позже.",
         },
         search: {
             placeholder: "Поиск...",

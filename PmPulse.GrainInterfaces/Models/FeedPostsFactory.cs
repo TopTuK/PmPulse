@@ -19,10 +19,10 @@ namespace PmPulse.GrainInterfaces.Models
     }
 
     [GenerateSerializer]
-    public class FeedPosts(DateTime lastSyncDate, IEnumerable<IFeedPost> feedPosts) : IFeedPosts
+    public class SyncedPosts(DateTime lastSyncDate, IEnumerable<IFeedPost> feedPosts) : ISyncedPosts
     {
         [Id(0)]
-        public DateTime SyncDate { get; init; } = lastSyncDate;
+        public DateTime LastSyncDate { get; init; } = lastSyncDate;
         [Id(1)]
         public IEnumerable<IFeedPost> Posts { get; init; } = feedPosts;
     }
@@ -34,7 +34,7 @@ namespace PmPulse.GrainInterfaces.Models
             return new FeedPost(postText, postUrl, postDate, postImage);
         }
 
-        public static IFeedPosts CreateFeedPosts(DateTime lastSyncDate,
+        public static ISyncedPosts CreateFeedPosts(DateTime lastSyncDate,
             IEnumerable<IFeedPost> posts, int limit = -1)
         {
             var sortedPosts = posts
@@ -46,7 +46,7 @@ namespace PmPulse.GrainInterfaces.Models
                 sortedPosts = sortedPosts.Take(limit).ToList();
             }
 
-            return new FeedPosts(lastSyncDate, sortedPosts);
+            return new SyncedPosts(lastSyncDate, sortedPosts);
         }
     }
 }

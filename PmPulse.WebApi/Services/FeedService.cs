@@ -2,6 +2,8 @@
 using PmPulse.AppDomain.Models.Feed;
 using PmPulse.AppDomain.Models.Post;
 using PmPulse.GrainInterfaces;
+using PmPulse.GrainInterfaces.Models;
+using PmPulse.WebApi.Models;
 using PmPulse.WebApi.Models.Configuration;
 
 namespace PmPulse.WebApi.Services
@@ -26,6 +28,7 @@ namespace PmPulse.WebApi.Services
 
             public int DelaySeconds { get; init; }
             public int UpdateMinutes { get; init; }
+            public bool InlucdeWeeklyDigest { get; init; }
         }
 
         private readonly ILogger<FeedService> _logger = logger;
@@ -44,6 +47,7 @@ namespace PmPulse.WebApi.Services
                     BlockLimit = f.BlockLimit,
                     DelaySeconds = f.DelaySeconds,
                     UpdateMinutes = f.UpdateMinutes,
+                    InlucdeWeeklyDigest = f.InlucdeWeeklyDigest,
                 })
                 .ToList();
         private readonly IClusterClient _clusterClient = clusterClient;
@@ -85,7 +89,7 @@ namespace PmPulse.WebApi.Services
             _logger.LogInformation("FeedService::InitializeFeedsAsync: stop initialize feed grains");
         }
 
-        public async Task<IFeedPosts?> GetBlockFeedPostsAsync(string slug)
+        public async Task<IFeedPosts> GetBlockFeedPostsAsync(string slug)
         {
             _logger.LogInformation("FeedService::GetBlockFeedPostsAsync: get feeds for block. " +
                 "Slug={slug}", slug);
@@ -99,14 +103,14 @@ namespace PmPulse.WebApi.Services
             }
 
             var feedGrain = _clusterClient.GetGrain<IFeedGrain>(feed.Id);
-            var feedPosts = await feedGrain.GetFeedPosts(feed.BlockLimit);
-
+            var posts = await feedGrain.GetFeedPosts(feed.BlockLimit);
             _logger.LogInformation("FeedService::GetBlockFeedPostsAsync: return feed posts. " +
-                "Slug={slug} FeedPosts={feedPosts}", slug, feedPosts);
-            return feedPosts;
+                "Slug={slug} FeedPosts={feedPosts}", slug, posts?.Posts.Count());
+
+            return new FeedPosts(feed, posts);
         }
 
-        public async Task<IFeedPosts?> GetFeedPostsAsync(string slug)
+        public async Task<IFeedPosts> GetFeedPostsAsync(string slug)
         {
             _logger.LogInformation("FeedService::GetFeedPostsAsync: get feeds posts. " +
                 "Slug={slug}", slug);
@@ -120,11 +124,11 @@ namespace PmPulse.WebApi.Services
             }
 
             var feedGrain = _clusterClient.GetGrain<IFeedGrain>(feed.Id);
-            var feedPosts = await feedGrain.GetFeedPosts(feed.Limit);
+            var posts = await feedGrain.GetFeedPosts(feed.Limit);
 
             _logger.LogInformation("FeedService::GetFeedPostsAsync: return feed posts. " +
-                "Slug={slug} FeedPosts={feedPosts}", slug, feedPosts);
-            return feedPosts;
+                "Slug={slug} FeedPosts={feedPosts}", slug, posts?.Posts.Count());
+            return new FeedPosts(feed, posts);
         }
 
         public IFeed? GetFeedBySlug(string slug)
@@ -136,6 +140,42 @@ namespace PmPulse.WebApi.Services
             _logger.LogInformation("FeedService::GetFeedBySlug: return feed by slug. " +
                 "Slug={slug} Feed={feed}", slug, feed);
             return feed;
+        }
+
+        public async Task<IEnumerable<IFeedPosts>> GetWeeklyDigestAsync()
+        {
+            const int WEEK_DIGEST_DAYS = -7;
+
+            _logger.LogInformation("FeedService::GetWeeklyDigestAsync: start get weekly digest");
+
+            var digestFeeds = _feeds
+                .Where(f => f.InlucdeWeeklyDigest)
+                .Select(f => f)
+                .ToList();
+            _logger.LogInformation("FeedService::GetWeeklyDigestAsync: got digest feeds. " +
+                "Count={digestFeedsCount}", digestFeeds.Count);
+
+            var today = DateTime.Today.Date;
+            var startDate = DateTime.Today.AddDays(WEEK_DIGEST_DAYS);
+
+            var weeklyPosts = await digestFeeds
+                .Select(f => new
+                {
+                    Feed = f,
+                    Grain = _clusterClient.GetGrain<IFeedGrain>(f.Id)
+                })
+                .ToAsyncEnumerable()
+                .SelectAwait(async fg => new
+                {
+                    fg.Feed,
+                    Posts = await fg.Grain.GetPostsByDate(startDate)
+                })
+                .Select(fp => new FeedPosts(fp.Feed, today, fp.Posts))
+                .ToListAsync();
+
+            _logger.LogInformation("FeedService::GetWeeklyDigestAsync: return weekly digesr. " +
+                "WeeklyFeedPostsCount={weeklyFeedPostsCount}", weeklyPosts.Count);
+            return weeklyPosts;
         }
     }
 }
