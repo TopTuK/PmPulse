@@ -5,6 +5,7 @@ import { storeToRefs } from 'pinia'
 import { useFeedBlockStore } from '@/stores/feedBlockStore'
 import useFeedBlockService from '@/services/feedBlockService'
 import LensFilter from '@/components/LensFilter.vue'
+import FavoriteCheckbox from './FavoriteCheckbox.vue'
 
 // const { t } = useI18n()
 
@@ -67,10 +68,9 @@ onBeforeMount(async () => {
                 :placeholder="$t('feed_block.select_placeholder')"
                 class="flex-1 min-w-0"
             />
-            <VaCheckbox 
+            <FavoriteCheckbox 
                 v-model="showFavoriteFeeds"
                 class="flex-shrink-0"
-                :title="$t('feed_block.show_favorites_tooltip')"
             />
          </div>
 
@@ -222,17 +222,6 @@ onBeforeMount(async () => {
         padding: 0.875rem 1rem !important;
         font-size: 0.875rem !important;
         min-height: 2.75rem !important;
-    }
-    
-    /* Checkbox mobile styling for better touch targets */
-    :deep(.feed-block-select .va-checkbox) {
-        min-width: 2.5rem !important;
-        min-height: 2.5rem !important;
-    }
-    
-    :deep(.feed-block-select .va-checkbox__input) {
-        width: 1.25rem !important;
-        height: 1.25rem !important;
     }
     
     /* Ensure select takes available space on mobile */
