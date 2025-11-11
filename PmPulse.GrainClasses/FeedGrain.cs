@@ -4,6 +4,7 @@ using Orleans.Providers;
 using PmPulse.AppDomain.Models;
 using PmPulse.AppDomain.Models.Feed;
 using PmPulse.AppDomain.Models.Post;
+using PmPulse.AppDomain.Models.Rss;
 using PmPulse.GrainClasses.State;
 using PmPulse.GrainInterfaces;
 using PmPulse.GrainInterfaces.Models;
@@ -29,7 +30,7 @@ namespace PmPulse.GrainClasses
 
         public async Task InitializeState(string slug, string url, 
             int delaySeconds, int updateMinutes,
-            FeedType feedType)
+            FeedType feedType, FeedReaderType readerType)
         {
             var grainId = this.GetPrimaryKey();
             _logger.LogInformation("FeedGrain::InitializeState: initialize state. " +
@@ -42,7 +43,7 @@ namespace PmPulse.GrainClasses
                 _ => throw new ArgumentException("Unknown feed type", nameof(feedType))
             };
 
-            await fetcherGrain.StartFetch(slug, url, delaySeconds, updateMinutes);
+            await fetcherGrain.StartFetch(slug, url, delaySeconds, updateMinutes, readerType);
             _logger.LogInformation("FeedGrain::InitializeState: started fetch news. " +
                 "GrainId={grainId} Url={url} DelaySeconds={delaySeconds}, UpdateMinutes={updateMinutes}",
                 grainId, url, delaySeconds, updateMinutes);

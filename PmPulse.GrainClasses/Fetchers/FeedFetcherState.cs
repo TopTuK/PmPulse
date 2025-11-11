@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PmPulse.AppDomain.Models.Rss;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,5 +15,6 @@ namespace PmPulse.GrainClasses.Fetchers
         [Id(2)] public string Url { get; set; } = string.Empty;
         [Id(3)] public int DelayIntervalSeconds { get; set; } = 5;
         [Id(4)] public int UpdateIntervalMinutes { get; set; } = 5;
+        [Id(5)] public FeedReaderType ReaderType { get; set; } = FeedReaderType.Default;
     }
 }
