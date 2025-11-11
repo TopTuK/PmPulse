@@ -27,12 +27,12 @@ namespace PmPulse.AppDomain.Services
             return feed;
         }
 
-        private static async Task<Feed> GetRssFeedAsync(string feedUrl, RssFeedReaderType readerType)
+        private static async Task<Feed> GetRssFeedAsync(string feedUrl, FeedReaderType readerType)
         {
             var feed = (readerType) switch
             {
-                RssFeedReaderType.Default => await FeedReader.ReadAsync(feedUrl),
-                RssFeedReaderType.Html => await GetHtmlRssFeedAsync(feedUrl),
+                FeedReaderType.Default => await FeedReader.ReadAsync(feedUrl),
+                FeedReaderType.RssHtml => await GetHtmlRssFeedAsync(feedUrl),
                 _ => throw new ArgumentException("Unknown feed reader type", nameof(readerType))
             };
 
@@ -40,7 +40,7 @@ namespace PmPulse.AppDomain.Services
         }
 
         public static async Task<RssFeedSource> ParseRssFeedAsync(string feedUrl,
-            int limit = 1000, RssFeedReaderType readerType = RssFeedReaderType.Default)
+            int limit = 1000, FeedReaderType readerType = FeedReaderType.Default)
         {
             var feed = await GetRssFeedAsync(feedUrl, readerType);
 

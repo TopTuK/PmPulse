@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using PmPulse.AppDomain.Models;
 using PmPulse.AppDomain.Models.Post;
+using PmPulse.AppDomain.Models.Rss;
 using PmPulse.AppDomain.Services;
 using PmPulse.GrainInterfaces;
 using PmPulse.GrainInterfaces.Models;
@@ -24,7 +25,9 @@ namespace PmPulse.GrainClasses.Fetchers
 
         private IGrainReminder _reminder = null!;
 
-        public async Task StartFetch(string slug, string url, int delaySeconds, int updateMinutes)
+        public async Task StartFetch(string slug, string url,
+            int delaySeconds, int updateMinutes, 
+            FeedReaderType readerType)
         {
             var grainId = this.GetPrimaryKey();
             _logger.LogInformation("RssFeedFetcherGrain::StartFetch: starting fetching news. " +
@@ -43,6 +46,8 @@ namespace PmPulse.GrainClasses.Fetchers
             _feedFetcherState.State.LastUpdateDate = null;
             _feedFetcherState.State.DelayIntervalSeconds = delaySeconds;
             _feedFetcherState.State.UpdateIntervalMinutes = updateMinutes;
+            _feedFetcherState.State.ReaderType = readerType;
+
             await _feedFetcherState.WriteStateAsync();
             _logger.LogInformation("RssFeedFetcherGrain::StartFetch: writed state. " +
                 "GrainId={grainId} Slug={slug} Url={url}",
@@ -61,12 +66,13 @@ namespace PmPulse.GrainClasses.Fetchers
             }
         }
 
-        private async Task<IEnumerable<IFeedPost>> FetchRssFeedAsync(string feedUrl)
+        private async Task<IEnumerable<IFeedPost>> FetchRssFeedAsync(string feedUrl,
+            FeedReaderType readerType = FeedReaderType.Default)
         {
             _logger.LogInformation("RssFeedFetcherGrain::FetchRssFeedAsync: start fetch RSS feed. " +
                 "RssUrl={rssUrl}", feedUrl);
 
-            var rssFeed = await RssFeedParser.ParseRssFeedAsync(feedUrl, 200);
+            var rssFeed = await RssFeedParser.ParseRssFeedAsync(feedUrl, 200, readerType);
             _logger.LogInformation("RssFeedFetcherGrain::FetchRssFeedAsync: complete parse RSS feed. " +
                 "RssName={rssName}, RssUrl={rssUrl}, MessagesCount={msgCount}",
             rssFeed.Title, rssFeed.Url, rssFeed.Entries.Count);
@@ -96,7 +102,8 @@ namespace PmPulse.GrainClasses.Fetchers
             if (reminderName == slug)
             {
                 var feedUrl = _feedFetcherState.State.Url;
-                var posts = await FetchRssFeedAsync(feedUrl);
+                var readerType = _feedFetcherState.State.ReaderType;
+                var posts = await FetchRssFeedAsync(feedUrl, readerType);
 
                 _logger.LogInformation("RssFeedFetcherGrain::ReceiveReminder: set posts to feed grain. " +
                     "GrainId={grainId}, PostsCount={postsCount}", grainId, posts.Count());

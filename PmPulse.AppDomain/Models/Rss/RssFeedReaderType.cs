@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace PmPulse.AppDomain.Models.Rss
 {
-    public enum RssFeedReaderType : int
+    public enum FeedReaderType : int
     {
         Default = 0,
-        Html = 1,
+        RssHtml = 1,
     }
 }

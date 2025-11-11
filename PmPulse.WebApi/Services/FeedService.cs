@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using PmPulse.AppDomain.Models.Feed;
 using PmPulse.AppDomain.Models.Post;
+using PmPulse.AppDomain.Models.Rss;
 using PmPulse.GrainInterfaces;
 using PmPulse.GrainInterfaces.Models;
 using PmPulse.WebApi.Models;
@@ -29,6 +30,8 @@ namespace PmPulse.WebApi.Services
             public int DelaySeconds { get; init; }
             public int UpdateMinutes { get; init; }
             public bool IncludeWeeklyDigest { get; init; }
+
+            public FeedReaderType ReaderType { get; init; }
         }
 
         private readonly ILogger<FeedService> _logger = logger;
@@ -49,6 +52,7 @@ namespace PmPulse.WebApi.Services
                     DelaySeconds = f.DelaySeconds,
                     UpdateMinutes = f.UpdateMinutes,
                     IncludeWeeklyDigest = f.IncludeWeeklyDigest,
+                    ReaderType = (FeedReaderType) f.ReaderFilter,
                 })
                 .ToList();
         private readonly IClusterClient _clusterClient = clusterClient;
@@ -80,7 +84,8 @@ namespace PmPulse.WebApi.Services
                         feed.Url, 
                         feed.DelaySeconds, 
                         feed.UpdateMinutes,
-                        feed.FeedType
+                        feed.FeedType,
+                        feed.ReaderType
                     );
                 })
                 .ToList();

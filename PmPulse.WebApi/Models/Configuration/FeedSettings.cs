@@ -2,7 +2,6 @@
 {
     public class FeedSettings
     {
-        public string Id { get; set; } = string.Empty;
         public int FeedType { get; set; } = -1;
         public string Slug { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
@@ -14,5 +13,6 @@
         public int DelaySeconds { get; set; } = 5;
         public int UpdateMinutes { get; set; } = 5;
         public bool IncludeWeeklyDigest { get; set; } = false;
+        public int ReaderFilter { get; set; } = 0;
     }
 }

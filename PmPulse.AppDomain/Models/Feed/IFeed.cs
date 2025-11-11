@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
+using PmPulse.AppDomain.Models.Rss;
 
 namespace PmPulse.AppDomain.Models.Feed
 {
@@ -21,5 +22,6 @@ namespace PmPulse.AppDomain.Models.Feed
         [JsonIgnore] int DelaySeconds { get; }
         [JsonIgnore] int UpdateMinutes { get; }
         [JsonIgnore] bool IncludeWeeklyDigest { get; }
+        [JsonIgnore] FeedReaderType ReaderType { get; }
     }
 }

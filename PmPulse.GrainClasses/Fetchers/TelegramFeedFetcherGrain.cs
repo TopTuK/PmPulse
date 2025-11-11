@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using PmPulse.AppDomain.Models;
 using PmPulse.AppDomain.Models.Post;
+using PmPulse.AppDomain.Models.Rss;
 using PmPulse.AppDomain.Services;
 using PmPulse.GrainInterfaces;
 using PmPulse.GrainInterfaces.Models;
@@ -65,7 +66,9 @@ namespace PmPulse.GrainClasses.Fetchers
                 "GrainId={grainId} ReminderName={reminiderName} Slug={slug}", grainId, reminderName, slug);
         }
 
-        public async Task StartFetch(string slug, string url, int delaySeconds, int updateMinutes)
+        public async Task StartFetch(string slug, string url, 
+            int delaySeconds, int updateMinutes,
+            FeedReaderType readerType)
         {
             var grainId = this.GetPrimaryKey();
             _logger.LogInformation("TelegramFeedFetcherGrain::StartFetch: starting fetching news. " +
@@ -84,6 +87,7 @@ namespace PmPulse.GrainClasses.Fetchers
             _feedFetcherState.State.LastUpdateDate = null;
             _feedFetcherState.State.DelayIntervalSeconds = delaySeconds;
             _feedFetcherState.State.UpdateIntervalMinutes = updateMinutes;
+
             await _feedFetcherState.WriteStateAsync();
             _logger.LogInformation("TelegramFeedFetcherGrain::StartFetch: writed state. " +
                 "GrainId={grainId} Slug={slug} Url={url}",
