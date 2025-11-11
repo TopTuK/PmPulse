@@ -1,33 +1,29 @@
-﻿using PmPulse.TestApp;
+﻿using CodeHollow.FeedReader;
 
-// Test the ChannelParser
+var httpClient = new HttpClient();
+httpClient.DefaultRequestHeaders.Add("User-Agent", 
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+httpClient.DefaultRequestHeaders.Add("Accept", "application/rss+xml, application/xml, text/xml, */*");
+httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
+
 try
 {
     Console.WriteLine("Testing RssParser...");
 
-    const string feedUrl = "https://www.kommersant.ru/RSS/news.xml";
-    await RssParser.ParseRssFeedAsync(feedUrl);
-    /*
-    Console.WriteLine("Testing ChannelParser...");
+    // Try different Reddit RSS URL formats
+    const string feedUrl = "https://www.reddit.com/r/news/.rss";
+
+    // Download the feed content with custom headers
+    var feedContent = await httpClient.GetStringAsync(feedUrl);
     
-    // Example usage - replace with an actual channel name
-    var channel = await ChannelParserEx.ParseChannelAsync("selihovkin", limit: 5);
-    
-    Console.WriteLine($"Channel: {channel.Name}");
-    Console.WriteLine($"URL: {channel.Url}");
-    Console.WriteLine($"Messages count: {channel.Messages.Count}");
-    
-    foreach (var message in channel.Messages)
-    {
-        Console.WriteLine($"- Message: {message.Text?[..Math.Min(100, message.Text?.Length ?? 0)]}...");
-        Console.WriteLine($"  Created: {message.CreatedAt}");
-        Console.WriteLine($"  URL: {message.Url}");
-        Console.WriteLine($"  Photo: {message.Photo}");
-        Console.WriteLine();
-    }
-    */
+    // Parse the feed content
+    var feed = FeedReader.ReadFromString(feedContent);
+
+    Console.WriteLine($"Feed Title: {feed.Title}");
+    Console.WriteLine($"Feed Items: {feed.Items.Count()}");
 }
 catch (Exception ex)
 {
     Console.WriteLine($"Error: {ex.Message}");
+    Console.WriteLine($"Stack Trace: {ex.StackTrace}");
 }

@@ -36,7 +36,8 @@ namespace PmPulse.WebApi.Services
                 .Feeds
                 .Select(f => new Feed
                 {
-                    Id = Guid.Parse(f.Id),
+                    //Id = Guid.Parse(f.Id),
+                    Id = Guid.NewGuid(),
                     FeedType = (FeedType) f.FeedType,
                     Slug = f.Slug,
                     Title = f.Title,
