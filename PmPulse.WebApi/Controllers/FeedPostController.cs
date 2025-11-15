@@ -37,6 +37,7 @@ namespace PmPulse.WebApi.Controllers
                     return NotFound();
                 }
 
+                // return feed posts. Slug=pmtransform LastSyncDate=11/15/2025 13:32:07 PostsCount=5
                 _logger.LogInformation("FeedPostController::GetBlockFeedPosts: return feed posts. " +
                     "Slug={slug} LastSyncDate={lastSyncDate} PostsCount={postsCount}",
                     feedPosts.Feed.Slug, feedPosts.LastSyncDate, feedPosts.Posts?.Count());
