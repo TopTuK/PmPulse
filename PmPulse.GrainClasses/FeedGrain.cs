@@ -36,6 +36,8 @@ namespace PmPulse.GrainClasses
             _logger.LogInformation("FeedGrain::InitializeState: initialize state. " +
                 "GrainId={grainId} Slug={slug} Url={url}", grainId, slug, url);
 
+            _logger.LogInformation("FeedGrain::InitializeState: fetcher grain. " +
+                "GrainId={grainId} FetcherGrainType={feedType}", grainId, feedType.ToString());
             IFeedFetcherGrain fetcherGrain = (feedType) switch
             {
                 FeedType.Telegram => GrainFactory.GetGrain<ITelegramFeedFetcherGrain>(grainId),
@@ -61,10 +63,11 @@ namespace PmPulse.GrainClasses
         public async Task SetPosts(IEnumerable<IFeedPost> posts)
         {
             var grainId = this.GetPrimaryKey();
+            var now = DateTime.UtcNow;
             _logger.LogInformation("FeedGrain::SetPosts: start write posts to state. " +
-                "GrainId={grainId} PostsCount={postsCount}", grainId, posts.Count());
+                "GrainId={grainId} PostsCount={postsCount} SyncDate={now}", grainId, posts.Count(), now);
 
-            _postState.State.SyncDate = DateTime.UtcNow;
+            _postState.State.SyncDate = now;
             _postState.State.Posts = posts;
             await _postState.WriteStateAsync();
 
