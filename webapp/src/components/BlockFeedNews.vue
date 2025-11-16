@@ -53,8 +53,15 @@ const loadFeed = async () => {
     feedPosts.value = null
 
     try {
-        feedPosts.value = await feedService.getBlockFeedPosts(props.feed.slug)
-        console.log('BlockFeedNews::loadFeed: got feed posts.')
+        const posts = await feedService.getBlockFeedPosts(props.feed.slug)
+        if (posts) {
+            console.log('BlockFeedNews::loadFeed: got feed posts. Slug:', props.feed.slug, 'LastSyncDate:', posts.lastSyncDate, 'PostsCount:', posts.posts.length)
+            feedPosts.value = posts
+        }
+        else {
+            console.error('BlockFeedNews::loadFeed: error occured. Msg: ', error)
+            feedPosts.value = null
+        }
     }
     catch (error) {
         console.error('BlockFeedNews::loadFeed: error occured. Msg: ', error)

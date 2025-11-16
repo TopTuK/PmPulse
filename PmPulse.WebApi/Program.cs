@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.StaticFiles;
 using PmPulse.WebApi.Models.Configuration;
 using PmPulse.WebApi.Services;
 using Serilog;
@@ -110,7 +111,42 @@ try
         app.UseHttpsRedirection();
     }
 
-    app.UseStaticFiles();
+    // Configure static files with appropriate cache control
+    var staticFileOptions = new StaticFileOptions();
+    
+    if (app.Environment.IsDevelopment())
+    {
+        // Disable caching in development to ensure fresh content
+        staticFileOptions.OnPrepareResponse = ctx =>
+        {
+            ctx.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
+            ctx.Context.Response.Headers.Append("Pragma", "no-cache");
+            ctx.Context.Response.Headers.Append("Expires", "0");
+        };
+    }
+    else
+    {
+        // In production, allow caching for hashed assets (Vite adds hashes to filenames)
+        // HTML files should not be cached to ensure updates are picked up
+        staticFileOptions.OnPrepareResponse = ctx =>
+        {
+            var path = ctx.File.Name.ToLower();
+            if (path.EndsWith(".html"))
+            {
+                // Don't cache HTML files
+                ctx.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
+                ctx.Context.Response.Headers.Append("Pragma", "no-cache");
+                ctx.Context.Response.Headers.Append("Expires", "0");
+            }
+            else
+            {
+                // Cache static assets (JS, CSS, images) for 1 year since they have hashes
+                ctx.Context.Response.Headers.Append("Cache-Control", "public, max-age=31536000, immutable");
+            }
+        };
+    }
+    
+    app.UseStaticFiles(staticFileOptions);
     app.UseRouting();
 
 #pragma warning disable ASP0014 // Suggest using top level route registrations
