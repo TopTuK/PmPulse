@@ -8,11 +8,6 @@ services:
     networks:
       - pmpulse-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   # Orleans Silo Host (scalable)
   pmpulse-silohost:
@@ -24,21 +19,14 @@ services:
       - ORLEANS_SILO_PORT=11111
       - ORLEANS_GATEWAY_PORT=30000
       - REDIS_CONNECTION_STRING=redis:6379
-    ports:
-      - "11111:11111"
-      - "30000:30000"
+    expose:
+      - "11111"
+      - "30000"
     networks:
       - pmpulse-network
     depends_on:
-      redis:
-        condition: service_healthy
+      - redis
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/11111' || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
 
   # Web API with integrated frontend (Release build)
   pmpulse-webapi:
@@ -61,10 +49,8 @@ services:
     volumes:
       - ./certs:/certs:ro
     depends_on:
-      redis:
-        condition: service_healthy
-      pmpulse-silohost:
-        condition: service_healthy
+      - redis
+      - pmpulse-silohost
     networks:
       - pmpulse-network
       - pmi_network
