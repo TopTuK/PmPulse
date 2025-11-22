@@ -59,7 +59,7 @@ const loadFeed = async () => {
             feedPosts.value = posts
         }
         else {
-            console.error('BlockFeedNews::loadFeed: error occured. Msg: ', error)
+            console.error('BlockFeedNews::loadFeed: no posts received for slug:', props.feed.slug)
             feedPosts.value = null
         }
     }

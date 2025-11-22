@@ -1,12 +1,10 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useFeedBlockStore } from '@/stores/feedBlockStore'
 import useFeedBlockService from '@/services/feedBlockService'
+import signalRService from '@/services/signalRService'
 import BlockFeedNews from '@/components/BlockFeedNews.vue'
-
-const { t } = useI18n()
 
 const feedBlockStore = useFeedBlockStore()
 const feedBlockService = useFeedBlockService()
@@ -40,7 +38,7 @@ const filteredFeeds = computed(() => {
                 title.toLowerCase().includes(filterLower) || 
                 slug.toLowerCase().includes(filterLower)
             )
-            .map(([title, slug]) => slug)
+            .map(([, slug]) => slug)
         
         feeds = feeds.filter(feed => matchingSlugs.includes(feed.slug))
     }
@@ -82,11 +80,46 @@ const loadFeedBlock = async () => {
     }
 }
 
+// SignalR connection handler
+let feedUpdateUnsubscribe = null
+const handleFeedUpdate = (data) => {
+    console.log('MainView: received FeedUpdated event', data)
+    
+    // Check if the updated feed is in the current feed block
+    if (data && data.slug && feedBlock.value && feedBlock.value.feeds) {
+        const feedInBlock = feedBlock.value.feeds.find(feed => feed.slug === data.slug)
+        if (feedInBlock) {
+            console.log('MainView: feed update matches a feed in current block, refreshing feed block...')
+            loadFeedBlock()
+        }
+    }
+}
+
 onMounted(async () => {
     await loadFeedBlock()
+    
+    // Start SignalR connection and listen for feed updates
+    try {
+        await signalRService.start()
+        
+        // Subscribe to feed update events
+        feedUpdateUnsubscribe = signalRService.on('FeedUpdated', handleFeedUpdate)
+        
+        console.log('MainView: SignalR connection established and listening for feed updates')
+    } catch (error) {
+        console.error('MainView: error connecting to SignalR', error)
+        // Continue even if SignalR connection fails - feed block will still work via manual refresh
+    }
+})
+
+onUnmounted(() => {
+    // Clean up SignalR listener
+    if (feedUpdateUnsubscribe) {
+        feedUpdateUnsubscribe()
+        feedUpdateUnsubscribe = null
+    }
 })
 </script>
-
 
 <template>
     <div class="flex flex-col w-full min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50">

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.StaticFiles;
 using PmPulse.GrainInterfaces;
+using PmPulse.WebApi.Hubs;
 using PmPulse.WebApi.Models;
 using PmPulse.WebApi.Models.Configuration;
 using PmPulse.WebApi.Services;
@@ -58,6 +59,9 @@ try
 
     // Configure application services
     ConfigureServices(builder.Services);
+
+    // Add SignalR
+    builder.Services.AddSignalR();
 
     // Add controllers to the container
     builder.Services
@@ -134,6 +138,7 @@ try
             name: "default",
             pattern: "api/{controller}/{action=Index}/{id?}"
         );
+        endpoints.MapHub<FeedUpdateHub>("/hubs/feedupdate");
     });
 #pragma warning restore ASP0014 // Suggest using top level route registrations
 
