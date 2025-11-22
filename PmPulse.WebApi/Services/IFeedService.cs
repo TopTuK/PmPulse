@@ -14,5 +14,7 @@ namespace PmPulse.WebApi.Services
         Task<IFeedPosts> GetFeedPostsAsync(string slug);
 
         Task<IEnumerable<IFeedPosts>> GetWeeklyDigestAsync();
+
+        Task UpdateFeedSubscriptionsAsync();
     }
 }
