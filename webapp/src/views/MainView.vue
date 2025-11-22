@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useFeedBlockStore } from '@/stores/feedBlockStore'
 import useFeedBlockService from '@/services/feedBlockService'
@@ -80,43 +80,17 @@ const loadFeedBlock = async () => {
     }
 }
 
-// SignalR connection handler
-let feedUpdateUnsubscribe = null
-const handleFeedUpdate = (data) => {
-    console.log('MainView: received FeedUpdated event', data)
-    
-    // Check if the updated feed is in the current feed block
-    if (data && data.slug && feedBlock.value && feedBlock.value.feeds) {
-        const feedInBlock = feedBlock.value.feeds.find(feed => feed.slug === data.slug)
-        if (feedInBlock) {
-            console.log('MainView: feed update matches a feed in current block, refreshing feed block...')
-            loadFeedBlock()
-        }
-    }
-}
-
 onMounted(async () => {
     await loadFeedBlock()
     
-    // Start SignalR connection and listen for feed updates
+    // Start SignalR connection (singleton - safe to call multiple times)
+    // BlockFeedNews components will handle their own feed update subscriptions
     try {
         await signalRService.start()
-        
-        // Subscribe to feed update events
-        feedUpdateUnsubscribe = signalRService.on('FeedUpdated', handleFeedUpdate)
-        
-        console.log('MainView: SignalR connection established and listening for feed updates')
+        console.log('MainView: SignalR connection started (BlockFeedNews components will handle feed updates)')
     } catch (error) {
         console.error('MainView: error connecting to SignalR', error)
         // Continue even if SignalR connection fails - feed block will still work via manual refresh
-    }
-})
-
-onUnmounted(() => {
-    // Clean up SignalR listener
-    if (feedUpdateUnsubscribe) {
-        feedUpdateUnsubscribe()
-        feedUpdateUnsubscribe = null
     }
 })
 </script>
