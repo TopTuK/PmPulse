@@ -1,9 +1,10 @@
 <script setup>
-import { ref, computed, onBeforeMount } from 'vue'
+import { ref, computed, onBeforeMount, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import useFeedService from '@/services/feedService'
+import signalRService from '@/services/signalRService'
 import { formateDateTime, truncateHtmlText } from '@/utils'
 import FeedPostModalView from './FeedPostModalView.vue'
 import { useFeedBlockStore } from '@/stores/feedBlockStore'
@@ -59,7 +60,7 @@ const loadFeed = async () => {
             feedPosts.value = posts
         }
         else {
-            console.error('BlockFeedNews::loadFeed: error occured. Msg: ', error)
+            console.error('BlockFeedNews::loadFeed: no posts received for slug:', props.feed.slug)
             feedPosts.value = null
         }
     }
@@ -110,8 +111,42 @@ const addRemoveFavoriteFeed = () => {
     }
 }
 
+// SignalR connection handler
+let feedUpdateUnsubscribe = null
+
+const handleFeedUpdate = (data) => {
+    console.log('BlockFeedNews: received FeedUpdated event', data)
+    
+    // Only refresh if the update is for this specific feed
+    if (data && data.slug === props.feed.slug) {
+        console.log('BlockFeedNews: feed update matches current feed, refreshing posts...')
+        loadFeed()
+    }
+}
+
 onBeforeMount(async () => {
     await loadFeed()
+    
+    // Start SignalR connection and listen for feed updates
+    try {
+        await signalRService.start()
+        
+        // Subscribe to feed update events
+        feedUpdateUnsubscribe = signalRService.on('FeedUpdated', handleFeedUpdate)
+        
+        console.log('BlockFeedNews: SignalR connection established and listening for feed updates')
+    } catch (error) {
+        console.error('BlockFeedNews: error connecting to SignalR', error)
+        // Continue even if SignalR connection fails - feed will still work via manual refresh
+    }
+})
+
+onUnmounted(() => {
+    // Clean up SignalR listener
+    if (feedUpdateUnsubscribe) {
+        feedUpdateUnsubscribe()
+        feedUpdateUnsubscribe = null
+    }
 })
 </script>
 
