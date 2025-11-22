@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Connections.Features;
 using Microsoft.Extensions.Logging;
 using Orleans.Providers;
+using Orleans.Utilities;
 using PmPulse.AppDomain.Models;
 using PmPulse.AppDomain.Models.Feed;
 using PmPulse.AppDomain.Models.Post;
@@ -23,10 +24,22 @@ namespace PmPulse.GrainClasses
         [PersistentState(OrleansConstants.POST_STATE_NAME, OrleansConstants.POST_STATE_STORE_NAME)]
                 IPersistentState<FeedPostsState> postState) : Grain, IFeedGrain
     {
+        private const int OBSERVER_EXPIRATION_MINUTES = 15;
+
         private readonly ILogger<FeedGrain> _logger = logger;
 
         private readonly IPersistentState<FeedGrainState> _feedState = feedState;
         private readonly IPersistentState<FeedPostsState> _postState = postState;
+
+        private readonly ObserverManager<IFeedUpdateObserver> _subsManager = new(
+            TimeSpan.FromMinutes(OBSERVER_EXPIRATION_MINUTES),
+            logger
+        );
+
+        public override Task OnActivateAsync(CancellationToken cancellationToken)
+        {
+            return base.OnActivateAsync(cancellationToken);
+        }
 
         public async Task InitializeState(string slug, string url, 
             int delaySeconds, int updateMinutes,
@@ -64,12 +77,19 @@ namespace PmPulse.GrainClasses
         {
             var grainId = this.GetPrimaryKey();
             var now = DateTime.UtcNow;
-            _logger.LogInformation("FeedGrain::SetPosts: start write posts to state. " +
-                "GrainId={grainId} PostsCount={postsCount} SyncDate={now}", grainId, posts.Count(), now);
+            var postsCount = posts.Count();
+
+            _logger.LogInformation("FeedGrain::SetPosts: save posts to state. " +
+                "GrainId={grainId} PostsCount={postsCount} SyncDate={now}", grainId, postsCount, now);
 
             _postState.State.SyncDate = now;
             _postState.State.Posts = posts;
             await _postState.WriteStateAsync();
+            _logger.LogInformation("FeedGrain::SetPosts: saved posts to state. " +
+                "GrainId={grainId} PostsCount={postsCount} SyncDate={now}", grainId, postsCount, now);
+
+            var slug = _feedState.State.Slug;
+            await _subsManager.Notify(s => s.OnFeedUpdate(grainId, slug, posts));
 
             _logger.LogInformation("FeedGrain::SetPosts: complete write posts to state. " +
                 "GrainId={grainId} PostsCount={postsCount}", grainId, _postState.State.Posts.Count());
@@ -125,6 +145,18 @@ namespace PmPulse.GrainClasses
             _logger.LogInformation("FeedGrain::GetWeeklyPosts: return weekly feed posts." +
                 "PostsCount={postsCount}", feedPosts.Count);
             return Task.FromResult<IEnumerable<IFeedPost>>(feedPosts);
+        }
+
+        public Task Subscribe(IFeedUpdateObserver observer)
+        {
+            _subsManager.Subscribe(observer, observer);
+            return Task.CompletedTask;
+        }
+
+        public Task UnSubscribe(IFeedUpdateObserver observer)
+        {
+            _subsManager.Unsubscribe(observer);
+            return Task.CompletedTask;
         }
     }
 }

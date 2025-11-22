@@ -12,7 +12,8 @@ namespace PmPulse.WebApi.Services
     public class FeedService(
             ILogger<FeedService> logger, 
             IOptions<FeedBlockSettings> settings,
-            IClusterClient clusterClient
+            IClusterClient clusterClient,
+            IFeedUpdateObserver feedUpdateObserver
         ) : IFeedService
     {
         private class Feed : IFeed
@@ -55,7 +56,9 @@ namespace PmPulse.WebApi.Services
                     ReaderType = (FeedReaderType) f.ReaderFilter,
                 })
                 .ToList();
+        
         private readonly IClusterClient _clusterClient = clusterClient;
+        private readonly IFeedUpdateObserver _feedUpdateObserver = feedUpdateObserver;
 
         public IEnumerable<IFeed> GetFeedsByBlockName(string blockName)
         {
@@ -89,8 +92,12 @@ namespace PmPulse.WebApi.Services
                     );
                 })
                 .ToList();
-
             await Task.WhenAll(feedGrainsTasks);
+            _logger.LogInformation("FeedService::InitializeFeedsAsync: initialized grains. " +
+                "FeedsCount={feedsCount}", _feeds.Count);
+
+            await UpdateFeedSubscriptionsAsync();
+            _logger.LogInformation("FeedService::InitializeFeedsAsync: subscribed to feed updates");
 
             _logger.LogInformation("FeedService::InitializeFeedsAsync: stop initialize feed grains");
         }
@@ -182,6 +189,24 @@ namespace PmPulse.WebApi.Services
             _logger.LogInformation("FeedService::GetWeeklyDigestAsync: return weekly digesr. " +
                 "WeeklyFeedPostsCount={weeklyFeedPostsCount}", weeklyPosts.Count);
             return weeklyPosts;
+        }
+
+        public async Task UpdateFeedSubscriptionsAsync()
+        {
+            _logger.LogInformation("FeedService::UpdateFeedSubscriptions: START resubscribe to feed updates");
+
+            var feedObserverObj = _clusterClient.CreateObjectReference<IFeedUpdateObserver>(_feedUpdateObserver);
+
+            var feedGrainsTasks = _feeds
+                .Select(feed =>
+                {
+                    var feedGrain = _clusterClient.GetGrain<IFeedGrain>(feed.Id);
+                    return feedGrain.Subscribe(feedObserverObj);
+                })
+                .ToList();
+            await Task.WhenAll(feedGrainsTasks);
+
+            _logger.LogInformation("FeedService::UpdateFeedSubscriptions: END resubscribe to feed updates");
         }
     }
 }

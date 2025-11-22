@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.StaticFiles;
+using PmPulse.GrainInterfaces;
+using PmPulse.WebApi.Models;
 using PmPulse.WebApi.Models.Configuration;
 using PmPulse.WebApi.Services;
 using Serilog;
@@ -9,10 +11,12 @@ static void ConfigureServices(IServiceCollection services)
 {
     // HostedService
     services.AddHostedService<StartupService>();
+    services.AddHostedService<FeedSubscriptionService>();
 
     // Singletons
     services.AddSingleton<IBlockService, BlockService>();
     services.AddSingleton<IFeedService,  FeedService>();
+    services.AddSingleton<IFeedUpdateObserver, FeedUpdateObserver>();
 }
 
 static void ConfigureOptions(IServiceCollection services, IConfiguration configuration)
