@@ -37,6 +37,23 @@ try
     var builder = WebApplication.CreateBuilder(args);
     var configuration = builder.Configuration;
 
+    // Configure Sentry (production only)
+    if (builder.Environment.IsProduction())
+    {
+        var sentryDsn = Environment.GetEnvironmentVariable("SENTRY_DSN") 
+            ?? Environment.GetEnvironmentVariable("Sentry__Dsn");
+        
+        if (!string.IsNullOrEmpty(sentryDsn))
+        {
+            builder.WebHost.UseSentry(options =>
+            {
+                options.Dsn = sentryDsn;
+                options.TracesSampleRate = 1.0; // Capture 100% of transactions for performance monitoring
+                options.Environment = builder.Environment.EnvironmentName;
+            });
+        }
+    }
+
     // Configure Kestrel for HTTPS with PEM certificates (non-development environments)
     if (!builder.Environment.IsDevelopment())
     {
@@ -110,6 +127,12 @@ try
 
     /* BUILD */
     var app = builder.Build();
+
+    // Use Sentry to capture exceptions and performance (production only)
+    if (app.Environment.IsProduction())
+    {
+        app.UseSentryTracing();
+    }
 
     // Configure forwarded headers for reverse proxy support (required for WebSocket behind proxy)
     if (!app.Environment.IsDevelopment())
