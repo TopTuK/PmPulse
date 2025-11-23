@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.StaticFiles;
 using PmPulse.GrainInterfaces;
 using PmPulse.WebApi.Hubs;
@@ -109,6 +110,17 @@ try
 
     /* BUILD */
     var app = builder.Build();
+
+    // Configure forwarded headers for reverse proxy support (required for WebSocket behind proxy)
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost,
+            // Trust all proxies in Docker network - adjust if needed for security
+            RequireHeaderSymmetry = false
+        });
+    }
 
     // Configure the HTTP request pipeline
     if (!app.Environment.IsDevelopment())
