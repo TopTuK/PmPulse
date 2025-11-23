@@ -32,6 +32,8 @@ services:
   pmpulse-webapi:
     image: ghcr.io/toptuk/pmpulse-webapi:latest
     container_name: pmpulse-webapi
+    env_file:
+      - .env
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - DOTNET_ENVIRONMENT=Production
