@@ -10,6 +10,28 @@ Log.Logger = new LoggerConfiguration()
 try
 {
     var builder = Host.CreateDefaultBuilder(args);
+    
+    // Configure Sentry (production only)
+    builder.ConfigureLogging((context, logging) =>
+    {
+        var hostingEnvironment = context.HostingEnvironment;
+        
+        if (hostingEnvironment.IsProduction())
+        {
+            var sentryDsn = Environment.GetEnvironmentVariable("SENTRY_DSN") 
+                ?? Environment.GetEnvironmentVariable("Sentry__Dsn");
+            
+            if (!string.IsNullOrEmpty(sentryDsn))
+            {
+                logging.AddSentry(options =>
+                {
+                    options.Dsn = sentryDsn;
+                    options.TracesSampleRate = 1.0; // Capture 100% of transactions for performance monitoring
+                    options.Environment = hostingEnvironment.EnvironmentName;
+                });
+            }
+        }
+    });
 
     builder
         .UseOrleans((context, silo) =>

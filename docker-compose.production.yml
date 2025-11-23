@@ -13,6 +13,8 @@ services:
   pmpulse-silohost:
     image: ghcr.io/toptuk/pmpulse-silohost:latest
     # Removed container_name to allow scaling with docker-compose up --scale pmpulse-silohost=N
+    env_file:
+      - .env
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - DOTNET_ENVIRONMENT=Docker
