@@ -140,6 +140,11 @@ try
         ctx.Context.Response.Headers.Append("Expires", "0");
     };
     
+    // Ensure .webmanifest files are served with correct MIME type
+    var contentTypeProvider = new FileExtensionContentTypeProvider();
+    contentTypeProvider.Mappings[".webmanifest"] = "application/manifest+json";
+    staticFileOptions.ContentTypeProvider = contentTypeProvider;
+    
     app.UseStaticFiles(staticFileOptions);
     app.UseRouting();
 
