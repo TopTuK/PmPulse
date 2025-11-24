@@ -53,13 +53,42 @@ try
                 // Use Docker container networking with Redis clustering for scale support
                 var siloPort = int.Parse(Environment.GetEnvironmentVariable("ORLEANS_SILO_PORT") ?? "11111");
                 var gatewayPort = int.Parse(Environment.GetEnvironmentVariable("ORLEANS_GATEWAY_PORT") ?? "30000");
-                var advertisedIP = Environment.GetEnvironmentVariable("ORLEANS_ADVERTISED_IP") ?? Environment.GetEnvironmentVariable("HOSTNAME");
+                var advertisedIP = Environment.GetEnvironmentVariable("ORLEANS_ADVERTISED_IP") 
+                    ?? Environment.GetEnvironmentVariable("HOSTNAME")
+                    ?? System.Net.IPAddress.Any.ToString();
                 var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") 
                     ?? Environment.GetEnvironmentVariable("ConnectionStrings__redis") 
                     ?? "localhost:6379";
                 
+                Log.Information("Configuring Orleans silo with Redis clustering. AdvertisedIP: {AdvertisedIP}, SiloPort: {SiloPort}, GatewayPort: {GatewayPort}", 
+                    advertisedIP, siloPort, gatewayPort);
+                
                 // Configure endpoints for Docker networking
-                silo.ConfigureEndpoints(advertisedIP, siloPort, gatewayPort, listenOnAnyHostAddress: true);
+                // ConfigureEndpoints will handle IP address parsing
+                // Pass null to let Orleans auto-detect the IP, which works well in Docker
+                System.Net.IPAddress? ipAddress = null;
+                if (!string.IsNullOrEmpty(advertisedIP) && advertisedIP != System.Net.IPAddress.Any.ToString())
+                {
+                    // Try to parse as IP address
+                    if (System.Net.IPAddress.TryParse(advertisedIP, out var parsedIP))
+                    {
+                        ipAddress = parsedIP;
+                        Log.Information("Using configured IP address: {IP}", ipAddress);
+                    }
+                    else
+                    {
+                        // If it's a hostname, Orleans will resolve it or we can pass null to auto-detect
+                        // In Docker, it's often better to let Orleans auto-detect
+                        Log.Information("AdvertisedIP is a hostname ({Hostname}), Orleans will auto-detect the actual IP", advertisedIP);
+                        ipAddress = null; // Let Orleans auto-detect - this works well in Docker
+                    }
+                }
+                else
+                {
+                    Log.Information("No advertised IP configured, Orleans will auto-detect");
+                }
+                
+                silo.ConfigureEndpoints(ipAddress, siloPort, gatewayPort, listenOnAnyHostAddress: true);
                 
                 // Use Redis for clustering to support horizontal scaling
                 silo.UseRedisClustering(options =>

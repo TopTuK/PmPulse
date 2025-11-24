@@ -118,10 +118,10 @@ try
             options.ServiceId = "PmPulse";
         });
         
-        // Add retry logic for gateway connections
+        // Add retry logic for gateway connections - refresh more frequently to find gateways
         client.Configure<Orleans.Configuration.GatewayOptions>(options =>
         {
-            options.GatewayListRefreshPeriod = TimeSpan.FromSeconds(10);
+            options.GatewayListRefreshPeriod = TimeSpan.FromSeconds(5);
         });
     });
 
