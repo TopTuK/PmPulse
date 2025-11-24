@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PmPulse.AppDomain.Models;
+using Sentry;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
