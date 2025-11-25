@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PmPulse.WebApi.Services;
+using Sentry;
 
 namespace PmPulse.WebApi.Controllers
 {
@@ -47,6 +48,12 @@ namespace PmPulse.WebApi.Controllers
             {
                 _logger.LogError("FeedPostController::GetBlockFeedPosts: exception raised. " +
                     "Message={exMsg}", ex.Message);
+                SentrySdk.CaptureException(ex, scope =>
+                {
+                    scope.SetTag("controller", "FeedPostController");
+                    scope.SetTag("method", "GetBlockFeedPosts");
+                    scope.SetExtra("slug", slug);
+                });
                 return BadRequest("Feed is not found");
             }
         }
@@ -84,6 +91,12 @@ namespace PmPulse.WebApi.Controllers
             {
                 _logger.LogError("FeedPostController::GetFeedPosts: exception raised. " +
                     "Message={exMsg}", ex.Message);
+                SentrySdk.CaptureException(ex, scope =>
+                {
+                    scope.SetTag("controller", "FeedPostController");
+                    scope.SetTag("method", "GetFeedPosts");
+                    scope.SetExtra("slug", slug);
+                });
                 return BadRequest("Feed is not found");
             }
         }
@@ -104,6 +117,11 @@ namespace PmPulse.WebApi.Controllers
             {
                 _logger.LogError("FeedPostController::GetWeeklyDigest: exception raised. " +
                     "Message={exMsg}", ex.Message);
+                SentrySdk.CaptureException(ex, scope =>
+                {
+                    scope.SetTag("controller", "FeedPostController");
+                    scope.SetTag("method", "GetWeeklyDigest");
+                });
                 return BadRequest("Weekly digest is not found");
             }
         }

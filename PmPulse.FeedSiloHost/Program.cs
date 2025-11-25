@@ -3,6 +3,10 @@ using Microsoft.Extensions.Logging;
 using PmPulse.AppDomain.Models;
 using Sentry;
 using Serilog;
+using DotNetEnv;
+
+// Load .env file if it exists
+Env.Load();
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
