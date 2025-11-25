@@ -1,4 +1,5 @@
 import api from './apiService'
+import * as Sentry from '@sentry/vue'
 
 export default function useFeedBlockService() {
     const GET_FEED_BLOCKS_ACTION = 'FeedBlock/GetAllFeedBlocks'
@@ -20,6 +21,9 @@ export default function useFeedBlockService() {
         }
         catch (error) {
             console.error('FeedBlockService::getFeedBlocks: exception raised. Error=', error)
+            Sentry.captureException(error, {
+                tags: { service: 'FeedBlockService', method: 'getFeedBlocks' }
+            })
             return null
         }
     }
@@ -44,6 +48,10 @@ export default function useFeedBlockService() {
         }
         catch (error) {
             console.error('FeedBlockService::getFeedBlock: exception raised. Error=', error)
+            Sentry.captureException(error, {
+                tags: { service: 'FeedBlockService', method: 'getFeedBlock' },
+                extra: { slug }
+            })
             return null
         }
     }

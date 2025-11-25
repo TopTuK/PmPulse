@@ -1,4 +1,5 @@
 import api from './apiService'
+import * as Sentry from '@sentry/vue'
 
 export default function useFeedService() {
     const GET_BLOCK_FEED_POSTS_ACTION = 'FeedPost/GetBlockFeedPosts'
@@ -25,6 +26,10 @@ export default function useFeedService() {
         }
         catch (error) {
             console.error('FeedService::getBlockFeedPosts: exception raised. Msg: ', error)
+            Sentry.captureException(error, {
+                tags: { service: 'FeedService', method: 'getBlockFeedPosts' },
+                extra: { slug }
+            })
             return null
         }
     }
@@ -49,6 +54,10 @@ export default function useFeedService() {
         }
         catch (error) {
             console.error('FeedService::getFeedPosts: exception raised. Error=', error)
+            Sentry.captureException(error, {
+                tags: { service: 'FeedService', method: 'getFeedPosts' },
+                extra: { slug }
+            })
             return null
         }
     }
@@ -69,6 +78,9 @@ export default function useFeedService() {
         }
         catch (error) {
             console.error('FeedService::getWeeklyDigest: exception raised. Error=', error)
+            Sentry.captureException(error, {
+                tags: { service: 'FeedService', method: 'getWeeklyDigest' }
+            })
             return null
         }
     }
