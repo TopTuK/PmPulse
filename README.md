@@ -304,6 +304,52 @@ docker build -f PmPulse.WebApi/Dockerfile -t pmpulse-webapi .
 docker build -f webapp/Dockerfile -t pmpulse-front ./webapp
 ```
 
+## Sentry Integration
+
+PmPulse includes comprehensive error tracking and performance monitoring through [Sentry](https://sentry.io/). Sentry integration is enabled in production environments only.
+
+### Backend Monitoring
+
+Both backend services (Web API and Orleans Silo Host) support Sentry for error tracking and performance monitoring:
+
+**Web API (`PmPulse.WebApi`)**:
+- Uses `Sentry.AspNetCore` for full ASP.NET Core integration
+- Automatic exception capture with request context
+- Performance tracing for HTTP requests
+- Custom error capturing in services with contextual data
+
+**Orleans Silo Host (`PmPulse.FeedSiloHost`)**:
+- Uses `Sentry.Extensions.Logging` for log-based error tracking
+- Captures exceptions from grain operations
+- Integrates with the .NET logging infrastructure
+
+### Frontend Monitoring
+
+The Vue.js frontend uses `@sentry/vue` with the following features:
+- **Error Tracking**: Automatic capture of JavaScript exceptions
+- **Performance Monitoring**: Browser tracing for page load and navigation performance
+- **Session Replay**: Records user sessions for debugging (with privacy masking enabled)
+
+Configuration in production:
+- 100% transaction sampling for performance monitoring
+- 10% session replay sampling for normal sessions
+- 100% session replay for sessions with errors
+
+### Environment Variables
+
+| Variable | Service | Description |
+|----------|---------|-------------|
+| `SENTRY_DSN` | WebApi, SiloHost | Sentry Data Source Name (DSN) for backend services |
+| `Sentry__Dsn` | WebApi, SiloHost | Alternative DSN variable (supports .NET configuration binding) |
+
+**Note**: The frontend DSN is configured directly in `webapp/src/main.js` for production builds.
+
+### Enabling Sentry
+
+1. **Backend**: Set the `SENTRY_DSN` environment variable with your Sentry DSN
+2. **Frontend**: Update the DSN in `webapp/src/main.js` with your project's DSN
+3. Sentry automatically activates in production environments
+
 ## Configuration
 
 Configuration files:
