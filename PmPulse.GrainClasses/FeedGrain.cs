@@ -107,6 +107,11 @@ namespace PmPulse.GrainClasses
                     "GrainId={grainId}", grainId);
                 return null;
             }
+            else if (_postState.State.SyncDate is null)
+            {
+                _logger.LogInformation("FeedGrain::GetFeedPosts: LastSyncDate sync date is null");
+                return null;
+            }
 
             var feedPosts = FeedPostsFactory.CreateFeedPosts(
                 (DateTime)_postState.State.SyncDate!,
