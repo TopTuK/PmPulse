@@ -23,7 +23,7 @@ try
         
         if (hostingEnvironment.IsProduction())
         {
-            var sentryDsn = Environment.GetEnvironmentVariable("SENTRY_DSN") 
+            var sentryDsn = Environment.GetEnvironmentVariable("SILO_SENTRY_DSN") 
                 ?? Environment.GetEnvironmentVariable("Sentry__Dsn");
             
             if (!string.IsNullOrEmpty(sentryDsn))
@@ -33,6 +33,8 @@ try
                     options.Dsn = sentryDsn;
                     options.TracesSampleRate = 1.0; // Capture 100% of transactions for performance monitoring
                     options.Environment = hostingEnvironment.EnvironmentName;
+                    // Ensure SDK is initialized for direct SentrySdk.CaptureException() calls
+                    options.AutoSessionTracking = true;
                 });
             }
         }
@@ -88,6 +90,13 @@ try
 catch(Exception ex)
 {
     Log.Fatal(ex, "Application terminated unexpectedly");
+    // Capture fatal exception to Sentry if initialized
+    SentrySdk.CaptureException(ex, scope =>
+    {
+        scope.SetTag("component", "FeedSiloHost");
+        scope.SetTag("fatal", "true");
+        scope.Level = SentryLevel.Fatal;
+    });
 }
 finally
 {
