@@ -127,14 +127,19 @@ namespace PmPulse.GrainClasses
         public Task<IEnumerable<IFeedPost>> GetPostsByDate(DateTime startDate)
         {
             var grainId = this.GetPrimaryKey();
-            _logger.LogInformation("FeedGrain::GetWeeklyPosts: start get weekly posts. " +
+            _logger.LogInformation("FeedGrain::GetPostsByDate: start get weekly posts. " +
                 "GrainId={grainId} Start date={startDate}", grainId, startDate.ToString("d"));
 
             if (_feedState.State.CurrentState == FeedState.None)
             {
-                _logger.LogWarning("FeedGrain::GetWeeklyPosts: feed grain is not initialized. " +
+                _logger.LogWarning("FeedGrain::GetPostsByDate: feed grain is not initialized. " +
                     "GrainId={grainId}", grainId);
                 return Task.FromResult(Enumerable.Empty<IFeedPost>());
+            }
+            else if (_postState.State.SyncDate is null)
+            {
+                _logger.LogInformation("FeedGrain::GetPostsByDate: LastSyncDate sync date is null");
+                return Task.FromResult(Enumerable.Empty<IFeedPost>()); ;
             }
 
             var feedPosts = _postState.State.Posts
@@ -147,7 +152,7 @@ namespace PmPulse.GrainClasses
                 ))
                 .ToList();
 
-            _logger.LogInformation("FeedGrain::GetWeeklyPosts: return weekly feed posts." +
+            _logger.LogInformation("FeedGrain::GetPostsByDate: return weekly feed posts." +
                 "PostsCount={postsCount}", feedPosts.Count);
             return Task.FromResult<IEnumerable<IFeedPost>>(feedPosts);
         }
