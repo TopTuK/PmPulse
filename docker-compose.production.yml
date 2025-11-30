@@ -5,6 +5,8 @@ services:
     container_name: pmpulse-redis
     ports:
       - "6379:6379"
+    volumes:
+      - redis-data:/data
     networks:
       - pmpulse-network
     restart: unless-stopped
@@ -65,3 +67,7 @@ networks:
     driver: bridge
   pmi_network:
     external: true
+
+volumes:
+  redis-data:
+    driver: local
