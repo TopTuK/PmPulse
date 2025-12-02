@@ -76,7 +76,7 @@ try
             
             silo.Configure<Orleans.Configuration.ClusterOptions>(options =>
                 {
-                    options.ClusterId = "dev";
+                    options.ClusterId = "Silo";
                     options.ServiceId = "PmPulse";
                 })
                 .UseInMemoryReminderService()

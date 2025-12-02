@@ -118,7 +118,7 @@ try
         // Configure connection retry for better reliability
         client.Configure<Orleans.Configuration.ClusterOptions>(options =>
         {
-            options.ClusterId = "dev";
+            options.ClusterId = "Silo";
             options.ServiceId = "PmPulse";
         });
         
