@@ -108,13 +108,17 @@ try
             client.UseRedisClustering(options =>
             {
                 options.ConfigurationOptions = StackExchange.Redis.ConfigurationOptions.Parse(redisConnectionString);
+                // Configure membership table entries to never expire
+                // Note: Orleans sets expiration on membership keys for dead silo detection
+                // Setting a very large expiration time effectively makes it infinite
+                options.EntryExpiry = TimeSpan.MaxValue;
             });
         }
         
         // Configure connection retry for better reliability
         client.Configure<Orleans.Configuration.ClusterOptions>(options =>
         {
-            options.ClusterId = "dev";
+            options.ClusterId = "Silo";
             options.ServiceId = "PmPulse";
         });
         

@@ -5,6 +5,7 @@ using PmPulse.AppDomain.Models.Rss;
 using PmPulse.AppDomain.Services;
 using PmPulse.GrainInterfaces;
 using PmPulse.GrainInterfaces.Models;
+using Sentry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -96,6 +97,15 @@ namespace PmPulse.GrainClasses.Fetchers
             {
                 _logger.LogError("RssFeedFetcherGrain::FetchRssFeedAsync: exception raised. Msg: {exMsg}",
                     ex.Message);
+                
+                SentrySdk.CaptureException(ex, scope =>
+                {
+                    scope.SetTag("grain", "RssFeedFetcherGrain");
+                    scope.SetTag("method", "FetchRssFeedAsync");
+                    scope.SetExtra("feedUrl", feedUrl);
+                    scope.SetExtra("readerType", readerType.ToString());
+                });
+                
                 throw;
             }
         }
@@ -128,9 +138,24 @@ namespace PmPulse.GrainClasses.Fetchers
                         "GrainId={grainId}, PostsCount={postsCount}", grainId, posts.Count());
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    _logger.LogInformation("RssFeedFetcherGrain::ReceiveReminder: exception raised. It was handled.");
+                    _logger.LogError("RssFeedFetcherGrain::ReceiveReminder: exception raised. " +
+                        "GrainId={grainId} Slug={slug} FeedUrl={feedUrl} Message={exMsg}", 
+                        grainId, slug, feedUrl, ex.Message);
+                    
+                    SentrySdk.CaptureException(ex, scope =>
+                    {
+                        scope.SetTag("grain", "RssFeedFetcherGrain");
+                        scope.SetTag("method", "ReceiveReminder");
+                        scope.SetTag("reminderName", reminderName);
+                        scope.SetExtra("grainId", grainId.ToString());
+                        scope.SetExtra("slug", slug);
+                        scope.SetExtra("feedUrl", feedUrl);
+                        scope.SetExtra("readerType", readerType.ToString());
+                    });
+                    
+                    // Exception is handled and not re-thrown to prevent reminder failure
                 }
             }
 

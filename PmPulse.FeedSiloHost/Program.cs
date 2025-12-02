@@ -23,7 +23,7 @@ try
         
         if (hostingEnvironment.IsProduction())
         {
-            var sentryDsn = Environment.GetEnvironmentVariable("SENTRY_DSN") 
+            var sentryDsn = Environment.GetEnvironmentVariable("SILO_SENTRY_DSN") 
                 ?? Environment.GetEnvironmentVariable("Sentry__Dsn");
             
             if (!string.IsNullOrEmpty(sentryDsn))
@@ -33,6 +33,8 @@ try
                     options.Dsn = sentryDsn;
                     options.TracesSampleRate = 1.0; // Capture 100% of transactions for performance monitoring
                     options.Environment = hostingEnvironment.EnvironmentName;
+                    // Ensure SDK is initialized for direct SentrySdk.CaptureException() calls
+                    options.AutoSessionTracking = true;
                 });
             }
         }
@@ -65,12 +67,16 @@ try
                 silo.UseRedisClustering(options =>
                 {
                     options.ConfigurationOptions = StackExchange.Redis.ConfigurationOptions.Parse(redisConnectionString);
+                    // Configure membership table entries to never expire
+                    // Note: Orleans sets expiration on membership keys for dead silo detection
+                    // Setting a very large expiration time effectively makes it infinite
+                    options.EntryExpiry = TimeSpan.MaxValue;
                 });
             }
             
             silo.Configure<Orleans.Configuration.ClusterOptions>(options =>
                 {
-                    options.ClusterId = "dev";
+                    options.ClusterId = "Silo";
                     options.ServiceId = "PmPulse";
                 })
                 .UseInMemoryReminderService()
@@ -88,6 +94,13 @@ try
 catch(Exception ex)
 {
     Log.Fatal(ex, "Application terminated unexpectedly");
+    // Capture fatal exception to Sentry if initialized
+    SentrySdk.CaptureException(ex, scope =>
+    {
+        scope.SetTag("component", "FeedSiloHost");
+        scope.SetTag("fatal", "true");
+        scope.Level = SentryLevel.Fatal;
+    });
 }
 finally
 {
