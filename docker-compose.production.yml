@@ -1,7 +1,7 @@
 services:
   # Redis for Orleans clustering
   redis:
-    image: redis:7-alpine
+    image: redis:alpine
     container_name: pmpulse-redis
     ports:
       - "6379:6379"
@@ -10,6 +10,11 @@ services:
     networks:
       - pmpulse-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Orleans Silo Host (scalable)
   pmpulse-silohost:
@@ -29,7 +34,8 @@ services:
     networks:
       - pmpulse-network
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     restart: unless-stopped
 
   # Web API with integrated frontend (Release build)

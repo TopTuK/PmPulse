@@ -1,7 +1,7 @@
 services:
   # Redis for Orleans clustering
   redis:
-    image: redis:7-alpine
+    image: redis:alpine
     container_name: pmpulse-redis
     ports:
       - "6379:6379"
@@ -36,12 +36,6 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/11111' || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
 
   # Web API with integrated frontend (Release build)
   pmpulse-webapi:
@@ -65,17 +59,9 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-      pmpulse-silohost:
-        condition: service_healthy
     networks:
       - pmpulse-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/feedblock || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
 
 networks:
   pmpulse-network:
