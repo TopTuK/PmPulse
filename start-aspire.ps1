@@ -59,7 +59,7 @@ try {
 Write-Host "Starting Aspire AppHost with Docker containers..." -ForegroundColor Blue
 Write-Host "This will:" -ForegroundColor Yellow
 Write-Host "  1. Build Docker images for all services"
-Write-Host "  2. Start Redis for Orleans clustering"
+Write-Host "  2. Start PostgreSQL for Orleans clustering"
 Write-Host "  3. Start Orleans Silo Host in Docker"
 Write-Host "  4. Start Web API in Docker"
 Write-Host "  5. Start Vue.js Frontend in Docker"
@@ -69,7 +69,7 @@ Write-Host "Services will be available at:" -ForegroundColor Yellow
 Write-Host "  • Aspire Dashboard: (will be shown after startup)"
 Write-Host "  • Frontend:  http://localhost:5173"
 Write-Host "  • Web API:   http://localhost:8080"
-Write-Host "  • Redis:     localhost:6379"
+Write-Host "  • PostgreSQL: localhost:5432"
 Write-Host ""
 Write-Host "Press Ctrl+C to stop all services" -ForegroundColor Yellow
 Write-Host ""

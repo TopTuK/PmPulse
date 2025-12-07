@@ -7,8 +7,15 @@ var IsNotDevelopment = !builder.Environment.IsDevelopment();
 
 if (startupType == "docker")
 {
-    // Add Redis for Orleans clustering
-    var redis = builder.AddRedis("redis");
+    // Add PostgreSQL for Orleans clustering using AddContainer for full control
+    // Note: We don't set POSTGRES_USER to allow default "postgres" user
+    // POSTGRES_PASSWORD sets the password for the default "postgres" user (default: "orleans")
+    // The orleans user and database will be created via init script
+    var postgresPassword = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD") ?? "orleans";
+    var postgres = builder.AddContainer("postgres", "postgres:16-alpine")
+        .WithEnvironment("POSTGRES_PASSWORD", postgresPassword)
+        .WithBindMount("../docker-entrypoint-initdb.d", "/docker-entrypoint-initdb.d")
+        .WithEndpoint(5432, 5432, "postgres");
 
     // Build the webapp frontend using NPM (Vite) for static assets
     var webappBuild = builder.AddNpmApp("webapp-build", "../webapp", "build");
@@ -21,7 +28,7 @@ if (startupType == "docker")
         .WithEnvironment("DOTNET_ENVIRONMENT", IsNotDevelopment ? "Development" : "Docker")
         .WithEnvironment("ORLEANS_SILO_PORT", "11111")
         .WithEnvironment("ORLEANS_GATEWAY_PORT", "30000")
-        .WithReference(redis);
+        .WithEnvironment("POSTGRES_CONNECTION_STRING", $"Host=postgres;Database=orleans;Username=orleans;Password={postgresPassword}");
 
     // Start frontend in Docker
     // var front = builder.AddDockerfile("front", "../webapp", "Dockerfile")
@@ -34,7 +41,7 @@ if (startupType == "docker")
         .WithEnvironment("ASPNETCORE_ENVIRONMENT", IsNotDevelopment ? "Development" : "Docker")
         .WithEnvironment("DOTNET_ENVIRONMENT", IsNotDevelopment ? "Development" : "Docker")
         .WithEnvironment("ASPNETCORE_URLS", "http://+:8080")
-        .WithReference(redis);
+        .WithEnvironment("POSTGRES_CONNECTION_STRING", $"Host=postgres;Database=orleans;Username=orleans;Password={postgresPassword}");
 }
 else
 {

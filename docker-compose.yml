@@ -1,20 +1,22 @@
 services:
-  # Redis for Orleans clustering
-  redis:
-    image: redis:alpine
-    container_name: pmpulse-redis
-    command: redis-server --appendonly yes --save "" --stop-writes-on-bgsave-error no
+  # PostgreSQL for Orleans clustering
+  postgres:
+    image: postgres:16-alpine
+    container_name: pmpulse-postgres
+    environment:
+      - POSTGRES_DB=orleans
+      - POSTGRES_USER=orleans
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-orleans}
     ports:
-      - "6379:6379"
+      - "5432:5432"
     volumes:
-      - redis-data:/data
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     networks:
       - pmpulse-network
     restart: unless-stopped
-    environment:
-      - ALLOW_EMPTY_PASSWORD=yes
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "pg_isready -U orleans"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,14 +33,14 @@ services:
       - DOTNET_ENVIRONMENT=Docker
       - ORLEANS_SILO_PORT=11111
       - ORLEANS_GATEWAY_PORT=30000
-      - REDIS_CONNECTION_STRING=redis:6379
+      - POSTGRES_CONNECTION_STRING=Host=postgres;Database=orleans;Username=orleans;Password=${POSTGRES_PASSWORD:-orleans}
     ports:
       - "11111:11111"
       - "30000:30000"
     networks:
       - pmpulse-network
     depends_on:
-      redis:
+      postgres:
         condition: service_healthy
     restart: unless-stopped
 
@@ -53,7 +55,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - DOTNET_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080;https://+:8443
-      - REDIS_CONNECTION_STRING=redis:6379
+      - POSTGRES_CONNECTION_STRING=Host=postgres;Database=orleans;Username=orleans;Password=${POSTGRES_PASSWORD:-orleans}
       - ASPNETCORE_Kestrel__Certificates__Default__CertificatePath=/certs/pmi.moscow.crt
       - ASPNETCORE_Kestrel__Certificates__Default__CertificateKeyPath=/certs/pmi.moscow.key
     ports:
@@ -62,7 +64,7 @@ services:
     volumes:
       - ./certs:/certs:ro
     depends_on:
-      redis:
+      postgres:
         condition: service_healthy
     networks:
       - pmpulse-network
@@ -73,5 +75,5 @@ networks:
     driver: bridge
 
 volumes:
-  redis-data:
+  postgres-data:
     driver: local

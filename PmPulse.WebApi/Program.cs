@@ -100,14 +100,15 @@ try
         }
         else
         {
-            // Use Redis clustering for Docker networking with scale support
-            var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") 
-                ?? Environment.GetEnvironmentVariable("ConnectionStrings__redis") 
-                ?? "localhost:6379";
+            // Use PostgreSQL clustering for Docker networking with scale support
+            var postgresConnectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING") 
+                ?? Environment.GetEnvironmentVariable("ConnectionStrings__postgres") 
+                ?? "Host=localhost;Database=orleans;Username=orleans;Password=orleans";
             
-            client.UseRedisClustering(options =>
+            client.UseAdoNetClustering(options =>
             {
-                options.ConfigurationOptions = StackExchange.Redis.ConfigurationOptions.Parse(redisConnectionString);
+                options.Invariant = "Npgsql";
+                options.ConnectionString = postgresConnectionString;
             });
         }
         
