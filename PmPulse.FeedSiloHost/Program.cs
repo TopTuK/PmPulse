@@ -52,21 +52,22 @@ try
             }
             else
             {
-                // Use Docker container networking with Redis clustering for scale support
+                // Use Docker container networking with PostgreSQL clustering for scale support
                 var siloPort = int.Parse(Environment.GetEnvironmentVariable("ORLEANS_SILO_PORT") ?? "11111");
                 var gatewayPort = int.Parse(Environment.GetEnvironmentVariable("ORLEANS_GATEWAY_PORT") ?? "30000");
                 var advertisedIP = Environment.GetEnvironmentVariable("ORLEANS_ADVERTISED_IP") ?? Environment.GetEnvironmentVariable("HOSTNAME");
-                var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") 
-                    ?? Environment.GetEnvironmentVariable("ConnectionStrings__redis") 
-                    ?? "localhost:6379";
+                var postgresConnectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING") 
+                    ?? Environment.GetEnvironmentVariable("ConnectionStrings__postgres") 
+                    ?? "Host=localhost;Database=orleans;Username=orleans;Password=orleans";
                 
                 // Configure endpoints for Docker networking
                 silo.ConfigureEndpoints(advertisedIP, siloPort, gatewayPort, listenOnAnyHostAddress: true);
                 
-                // Use Redis for clustering to support horizontal scaling
-                silo.UseRedisClustering(options =>
+                // Use PostgreSQL for clustering to support horizontal scaling
+                silo.UseAdoNetClustering(options =>
                 {
-                    options.ConfigurationOptions = StackExchange.Redis.ConfigurationOptions.Parse(redisConnectionString);
+                    options.Invariant = "Npgsql";
+                    options.ConnectionString = postgresConnectionString;
                 });
             }
             
