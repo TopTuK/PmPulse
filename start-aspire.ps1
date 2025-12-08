@@ -76,6 +76,7 @@ Write-Host ""
 
 # Run the AppHost with Docker environments
 $env:STARTUP_TYPE = "docker"
+$env:POSTGRES_PASSWORD = "orleans"
 dotnet run --project PmPulse.AppHost
 
 Write-Host ""

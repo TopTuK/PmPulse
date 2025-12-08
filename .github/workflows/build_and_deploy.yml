@@ -51,11 +51,15 @@ jobs:
         - run: echo "${{ secrets.PRODUCTION_SSH_KEY }}" > ${{ env.SSH_KEY_PATH }} && chmod 600 ${{ env.SSH_KEY_PATH }}
         - name: Create remote directory structure
           run: ssh -i ${{ env.SSH_KEY_PATH }} -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} "mkdir -p /home/s-admin/pmpulse/docker-entrypoint-initdb.d"
+        - name: Stop service
+          run: ssh -i ${{ env.SSH_KEY_PATH }} ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} "cd /home/s-admin/pmpulse && docker compose -f docker-compose.production.yml down -v"
         - name: Copy docker-compose.production.yml
           run: scp -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} docker-compose.production.yml ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:/home/s-admin/pmpulse/docker-compose.production.yml
         - name: Copy .env file
           run: scp -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} .env ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:/home/s-admin/pmpulse/.env
         - name: Copy docker-entrypoint-initdb.d directory
-          run: scp -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} -r docker-entrypoint-initdb.d/* ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:/home/s-admin/pmpulse/docker-entrypoint-initdb.d/
-        - run: ssh -i ${{ env.SSH_KEY_PATH }} ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} "cd /home/s-admin/pmpulse && docker compose -f docker-compose.production.yml down -v"
+          run: |
+            if [ "$(ls -A docker-entrypoint-initdb.d 2>/dev/null)" ]; then
+              scp -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} -r docker-entrypoint-initdb.d/* ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:/home/s-admin/pmpulse/docker-entrypoint-initdb.d/
+            fi
         - run: ssh -i ${{ env.SSH_KEY_PATH }} ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} "cd /home/s-admin/pmpulse && docker login ghcr.io -u $GITHUB_ACTOR -p ${{ secrets.REPO_TOKEN }} && docker pull ghcr.io/toptuk/pmpulse-silohost:latest && docker pull ghcr.io/toptuk/pmpulse-webapi:latest && docker compose -f docker-compose.production.yml up -d && docker system prune --all --force"

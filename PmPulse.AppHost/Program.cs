@@ -30,10 +30,6 @@ if (startupType == "docker")
         .WithEnvironment("ORLEANS_GATEWAY_PORT", "30000")
         .WithEnvironment("POSTGRES_CONNECTION_STRING", $"Host=postgres;Database=orleans;Username=orleans;Password={postgresPassword}");
 
-    // Start frontend in Docker
-    // var front = builder.AddDockerfile("front", "../webapp", "Dockerfile")
-        // .WithHttpEndpoint(port: 5173, targetPort: 80, name: "http");
-
     // Start Web API in Docker
     var webApi = builder.AddDockerfile("pmpulse-webapi", "..", "PmPulse.WebApi/Dockerfile")
         .WaitFor(webappBuild)
