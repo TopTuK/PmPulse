@@ -11,8 +11,14 @@ POSTGRES_DB="${POSTGRES_DB:-$POSTGRES_USER}"
 # Set the postgres user password explicitly (for Aspire health checks)
 # This ensures the postgres user has the password set even if POSTGRES_PASSWORD wasn't used during init
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    -- Set password for postgres user (required for Aspire health checks)
-    ALTER USER postgres WITH PASSWORD '$ORLEANS_PASSWORD';
+    -- Set password for postgres user if it exists (required for Aspire health checks)
+    DO \$\$
+    BEGIN
+        IF EXISTS (SELECT FROM pg_catalog.pg_user WHERE usename = 'postgres') THEN
+            ALTER USER postgres WITH PASSWORD '$ORLEANS_PASSWORD';
+        END IF;
+    END
+    \$\$;
     
     -- Create the orleans user if it doesn't exist
     DO \$\$
