@@ -53,6 +53,7 @@ PmPulse aggregates content from diverse sources and presents it through customiz
 
 ### Infrastructure
 - **Orleans Silo**: Distributed grain hosting
+- **PostgreSQL**: Database for Orleans clustering and membership management
 - **Service Defaults**: Shared service configurations
 - **Docker**: Containerization support for all services
 - **Docker Compose**: Multi-container orchestration
@@ -83,6 +84,11 @@ PmPulse uses a distributed grain-based architecture powered by Microsoft Orleans
 │  • RssFeedFetcherGrain          │  ← RSS parsing
 │  • TelegramFeedFetcherGrain     │  ← Telegram parsing
 └─────────────────────────────────┘
+         │
+         ▼
+┌─────────────────┐
+│  PostgreSQL     │  ← Orleans clustering & membership
+└─────────────────┘
 ```
 
 ### Key Components
@@ -91,6 +97,7 @@ PmPulse uses a distributed grain-based architecture powered by Microsoft Orleans
 - **Fetcher Grains**: Handle content retrieval and parsing for different source types
 - **Block Service**: Organize feeds into thematic blocks
 - **Feed Service**: Coordinate feed operations
+- **PostgreSQL Clustering**: Enables horizontal scaling of Orleans silos through ADO.NET clustering
 
 ## Getting Started
 
@@ -272,23 +279,29 @@ PmPulse includes full Docker support with containerized deployment options:
 
 The application uses automatic service discovery in Docker:
 
-- **Orleans Silo Host**: Advertises itself as `pmpulse-silohost` on ports 11111 (silo) and 30000 (gateway)
-- **Web API**: Connects to the silo using the service name `pmpulse-silohost`
+- **PostgreSQL**: Provides Orleans clustering database for silo membership management
+- **Orleans Silo Host**: Advertises itself as `pmpulse-silohost` on ports 11111 (silo) and 30000 (gateway), connects to PostgreSQL for clustering
+- **Web API**: Connects to the silo using PostgreSQL-based clustering (supports multiple silo instances)
 - **Frontend**: Nginx-based container serving the built Vue.js application
 
 ### Environment Variables
 
-The following environment variables control Docker networking:
+The following environment variables control Docker networking and clustering:
+
+**PostgreSQL:**
+- `POSTGRES_DB`: Database name for Orleans (default: orleans)
+- `POSTGRES_USER`: Database user (default: orleans)
+- `POSTGRES_PASSWORD`: Database password (default: orleans)
 
 **FeedSiloHost:**
 - `ORLEANS_SILO_PORT`: Silo communication port (default: 11111)
 - `ORLEANS_GATEWAY_PORT`: Gateway port for clients (default: 30000)
 - `ORLEANS_ADVERTISED_IP`: Service name for discovery (default: pmpulse-silohost)
+- `POSTGRES_CONNECTION_STRING`: PostgreSQL connection string for Orleans clustering (default: Host=postgres;Database=orleans;Username=orleans;Password=orleans)
 - `DOTNET_RUNNING_IN_CONTAINER`: Enables Docker mode (set to "true")
 
 **WebApi:**
-- `ORLEANS_SILO_HOST`: Hostname of the Orleans Silo (default: pmpulse-silohost)
-- `ORLEANS_GATEWAY_PORT`: Port to connect to gateway (default: 30000)
+- `POSTGRES_CONNECTION_STRING`: PostgreSQL connection string for Orleans client clustering (default: Host=postgres;Database=orleans;Username=orleans;Password=orleans)
 - `DOTNET_RUNNING_IN_CONTAINER`: Enables Docker mode (set to "true")
 
 ### Building Individual Containers
@@ -303,6 +316,47 @@ docker build -f PmPulse.WebApi/Dockerfile -t pmpulse-webapi .
 # Build Frontend
 docker build -f webapp/Dockerfile -t pmpulse-front ./webapp
 ```
+
+## Orleans Clustering with PostgreSQL
+
+PmPulse uses PostgreSQL for Orleans clustering, enabling horizontal scaling and high availability of the Orleans silo infrastructure.
+
+### Clustering Architecture
+
+In production and Docker environments, Orleans uses **ADO.NET clustering** with PostgreSQL as the membership provider:
+
+- **Membership Management**: PostgreSQL stores silo membership information, allowing multiple silo instances to discover and coordinate with each other
+- **Horizontal Scaling**: Multiple silo instances can run simultaneously, sharing the same PostgreSQL database for cluster coordination
+- **High Availability**: If one silo instance fails, other instances continue operating, and the failed silo can be restarted without cluster disruption
+
+### Development vs Production
+
+- **Development Mode**: Uses `UseLocalhostClustering()` for single-machine development (no database required)
+- **Production/Docker Mode**: Uses `UseAdoNetClustering()` with PostgreSQL for multi-instance deployments
+
+### Database Schema
+
+PostgreSQL clustering requires Orleans-specific tables and functions, which are automatically created via initialization scripts in `docker-entrypoint-initdb.d/`:
+
+- `OrleansMembershipVersionTable`: Tracks cluster membership version
+- `OrleansMembershipTable`: Stores individual silo membership information
+- `OrleansQuery`: Stores Orleans query templates
+- Custom PostgreSQL functions for membership operations
+
+### Scaling Silo Instances
+
+With PostgreSQL clustering, you can scale the Orleans silo horizontally:
+
+```bash
+# Scale to 3 silo instances
+docker-compose up --scale pmpulse-silohost=3
+```
+
+Each silo instance will:
+- Register itself in the PostgreSQL membership table
+- Discover other silo instances through the database
+- Distribute grain activations across all available silos
+- Maintain cluster health through periodic membership updates
 
 ## Sentry Integration
 

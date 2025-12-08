@@ -77,6 +77,7 @@ echo ""
 
 # Run the AppHost with Docker environments
 export STARTUP_TYPE=docker # This triggers the Docker mode in Program.cs
+export POSTGRES_PASSWORD=orleans
 dotnet run --project PmPulse.AppHost
 
 echo ""
