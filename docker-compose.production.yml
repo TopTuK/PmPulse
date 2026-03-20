@@ -1,42 +1,60 @@
 services:
-  # Redis for Orleans clustering
-  redis:
-    image: redis:7-alpine
-    container_name: pmpulse-redis
+  # PostgreSQL for Orleans clustering
+  postgres:
+    image: postgres:16-alpine
+    container_name: pmpulse-postgres
+    environment:
+      - POSTGRES_DB=orleans
+      - POSTGRES_USER=orleans
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-orleans}
     ports:
-      - "6379:6379"
+      - "5432:5432"
+    volumes:
+      # Do not need to persist data
+      # - postgres-data:/var/lib/postgresql/data
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     networks:
       - pmpulse-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orleans"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Orleans Silo Host (scalable)
   pmpulse-silohost:
     image: ghcr.io/toptuk/pmpulse-silohost:latest
     # Removed container_name to allow scaling with docker-compose up --scale pmpulse-silohost=N
+    env_file:
+      - .env
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - DOTNET_ENVIRONMENT=Docker
       - ORLEANS_SILO_PORT=11111
       - ORLEANS_GATEWAY_PORT=30000
-      - REDIS_CONNECTION_STRING=redis:6379
+      - POSTGRES_CONNECTION_STRING=Host=postgres;Database=orleans;Username=orleans;Password=${POSTGRES_PASSWORD:-orleans}
     expose:
       - "11111"
       - "30000"
     networks:
       - pmpulse-network
     depends_on:
-      - redis
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
   # Web API with integrated frontend (Release build)
   pmpulse-webapi:
     image: ghcr.io/toptuk/pmpulse-webapi:latest
     container_name: pmpulse-webapi
+    env_file:
+      - .env
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - DOTNET_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080;https://+:8443
-      - REDIS_CONNECTION_STRING=redis:6379
+      - POSTGRES_CONNECTION_STRING=Host=postgres;Database=orleans;Username=orleans;Password=${POSTGRES_PASSWORD:-orleans}
       - VIRTUAL_HOST=news.pmi.moscow
       - VIRTUAL_PORT=8443
       - VIRTUAL_PATH=/
@@ -49,8 +67,10 @@ services:
     volumes:
       - ./certs:/certs:ro
     depends_on:
-      - redis
-      - pmpulse-silohost
+      postgres:
+        condition: service_healthy
+      pmpulse-silohost:
+        condition: service_started
     networks:
       - pmpulse-network
       - pmi_network
@@ -61,3 +81,7 @@ networks:
     driver: bridge
   pmi_network:
     external: true
+
+volumes:
+  postgres-data:
+    driver: local

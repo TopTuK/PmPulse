@@ -1,12 +1,10 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useFeedBlockStore } from '@/stores/feedBlockStore'
 import useFeedBlockService from '@/services/feedBlockService'
+import signalRService from '@/services/signalRService'
 import BlockFeedNews from '@/components/BlockFeedNews.vue'
-
-const { t } = useI18n()
 
 const feedBlockStore = useFeedBlockStore()
 const feedBlockService = useFeedBlockService()
@@ -40,7 +38,7 @@ const filteredFeeds = computed(() => {
                 title.toLowerCase().includes(filterLower) || 
                 slug.toLowerCase().includes(filterLower)
             )
-            .map(([title, slug]) => slug)
+            .map(([, slug]) => slug)
         
         feeds = feeds.filter(feed => matchingSlugs.includes(feed.slug))
     }
@@ -84,9 +82,18 @@ const loadFeedBlock = async () => {
 
 onMounted(async () => {
     await loadFeedBlock()
+    
+    // Start SignalR connection (singleton - safe to call multiple times)
+    // BlockFeedNews components will handle their own feed update subscriptions
+    try {
+        await signalRService.start()
+        console.log('MainView: SignalR connection started (BlockFeedNews components will handle feed updates)')
+    } catch (error) {
+        console.error('MainView: error connecting to SignalR', error)
+        // Continue even if SignalR connection fails - feed block will still work via manual refresh
+    }
 })
 </script>
-
 
 <template>
     <div class="flex flex-col w-full min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50">

@@ -60,7 +60,7 @@ echo ""
 echo -e "${BLUE}Starting Aspire AppHost with Docker containers...${NC}"
 echo -e "${YELLOW}This will:${NC}"
 echo "  1. Build Docker images for all services"
-echo "  2. Start Redis for Orleans clustering"
+echo "  2. Start PostgreSQL for Orleans clustering"
 echo "  3. Start Orleans Silo Host in Docker"
 echo "  4. Start Web API in Docker"
 echo "  5. Start Vue.js Frontend in Docker"
@@ -70,13 +70,14 @@ echo -e "${YELLOW}Services will be available at:${NC}"
 echo "  • Aspire Dashboard: (will be shown after startup)"
 echo "  • Frontend:  http://localhost:5173"
 echo "  • Web API:   http://localhost:8080"
-echo "  • Redis:     localhost:6379"
+echo "  • PostgreSQL: localhost:5432"
 echo ""
 echo -e "${YELLOW}Press Ctrl+C to stop all services${NC}"
 echo ""
 
 # Run the AppHost with Docker environments
 export STARTUP_TYPE=docker # This triggers the Docker mode in Program.cs
+export POSTGRES_PASSWORD=orleans
 dotnet run --project PmPulse.AppHost
 
 echo ""

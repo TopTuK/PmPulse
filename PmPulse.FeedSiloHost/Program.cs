@@ -1,7 +1,12 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PmPulse.AppDomain.Models;
+using Sentry;
 using Serilog;
+using DotNetEnv;
+
+// Load .env file if it exists
+Env.Load();
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -10,6 +15,30 @@ Log.Logger = new LoggerConfiguration()
 try
 {
     var builder = Host.CreateDefaultBuilder(args);
+    
+    // Configure Sentry (production only)
+    builder.ConfigureLogging((context, logging) =>
+    {
+        var hostingEnvironment = context.HostingEnvironment;
+        
+        if (hostingEnvironment.IsProduction())
+        {
+            var sentryDsn = Environment.GetEnvironmentVariable("SILO_SENTRY_DSN") 
+                ?? Environment.GetEnvironmentVariable("Sentry__Dsn");
+            
+            if (!string.IsNullOrEmpty(sentryDsn))
+            {
+                logging.AddSentry(options =>
+                {
+                    options.Dsn = sentryDsn;
+                    options.TracesSampleRate = 1.0; // Capture 100% of transactions for performance monitoring
+                    options.Environment = hostingEnvironment.EnvironmentName;
+                    // Ensure SDK is initialized for direct SentrySdk.CaptureException() calls
+                    options.AutoSessionTracking = true;
+                });
+            }
+        }
+    });
 
     builder
         .UseOrleans((context, silo) =>
@@ -23,27 +52,28 @@ try
             }
             else
             {
-                // Use Docker container networking with Redis clustering for scale support
+                // Use Docker container networking with PostgreSQL clustering for scale support
                 var siloPort = int.Parse(Environment.GetEnvironmentVariable("ORLEANS_SILO_PORT") ?? "11111");
                 var gatewayPort = int.Parse(Environment.GetEnvironmentVariable("ORLEANS_GATEWAY_PORT") ?? "30000");
                 var advertisedIP = Environment.GetEnvironmentVariable("ORLEANS_ADVERTISED_IP") ?? Environment.GetEnvironmentVariable("HOSTNAME");
-                var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") 
-                    ?? Environment.GetEnvironmentVariable("ConnectionStrings__redis") 
-                    ?? "localhost:6379";
+                var postgresConnectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING") 
+                    ?? Environment.GetEnvironmentVariable("ConnectionStrings__postgres") 
+                    ?? "Host=localhost;Database=orleans;Username=orleans;Password=orleans";
                 
                 // Configure endpoints for Docker networking
                 silo.ConfigureEndpoints(advertisedIP, siloPort, gatewayPort, listenOnAnyHostAddress: true);
                 
-                // Use Redis for clustering to support horizontal scaling
-                silo.UseRedisClustering(options =>
+                // Use PostgreSQL for clustering to support horizontal scaling
+                silo.UseAdoNetClustering(options =>
                 {
-                    options.ConfigurationOptions = StackExchange.Redis.ConfigurationOptions.Parse(redisConnectionString);
+                    options.Invariant = "Npgsql";
+                    options.ConnectionString = postgresConnectionString;
                 });
             }
             
             silo.Configure<Orleans.Configuration.ClusterOptions>(options =>
                 {
-                    options.ClusterId = "dev";
+                    options.ClusterId = "Silo";
                     options.ServiceId = "PmPulse";
                 })
                 .UseInMemoryReminderService()
@@ -61,6 +91,13 @@ try
 catch(Exception ex)
 {
     Log.Fatal(ex, "Application terminated unexpectedly");
+    // Capture fatal exception to Sentry if initialized
+    SentrySdk.CaptureException(ex, scope =>
+    {
+        scope.SetTag("component", "FeedSiloHost");
+        scope.SetTag("fatal", "true");
+        scope.Level = SentryLevel.Fatal;
+    });
 }
 finally
 {

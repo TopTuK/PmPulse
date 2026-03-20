@@ -6,13 +6,15 @@ using PmPulse.GrainInterfaces;
 using PmPulse.GrainInterfaces.Models;
 using PmPulse.WebApi.Models;
 using PmPulse.WebApi.Models.Configuration;
+using Sentry;
 
 namespace PmPulse.WebApi.Services
 {
     public class FeedService(
             ILogger<FeedService> logger, 
             IOptions<FeedBlockSettings> settings,
-            IClusterClient clusterClient
+            IClusterClient clusterClient,
+            IFeedUpdateObserver feedUpdateObserver
         ) : IFeedService
     {
         private class Feed : IFeed
@@ -55,7 +57,9 @@ namespace PmPulse.WebApi.Services
                     ReaderType = (FeedReaderType) f.ReaderFilter,
                 })
                 .ToList();
+        
         private readonly IClusterClient _clusterClient = clusterClient;
+        private readonly IFeedUpdateObserver _feedUpdateObserver = feedUpdateObserver;
 
         public IEnumerable<IFeed> GetFeedsByBlockName(string blockName)
         {
@@ -75,24 +79,43 @@ namespace PmPulse.WebApi.Services
         {
             _logger.LogInformation("FeedService::InitializeFeedsAsync: start initialize feed grains");
 
-            var feedGrainsTasks = _feeds
-                .Select(feed =>
+            try
+            {
+                var feedGrainsTasks = _feeds
+                    .Select(feed =>
+                    {
+                        var feedGrain = _clusterClient.GetGrain<IFeedGrain>(feed.Id);
+                        return feedGrain.InitializeState(
+                            feed.Slug, 
+                            feed.Url, 
+                            feed.DelaySeconds, 
+                            feed.UpdateMinutes,
+                            feed.FeedType,
+                            feed.ReaderType
+                        );
+                    })
+                    .ToList();
+                await Task.WhenAll(feedGrainsTasks);
+                _logger.LogInformation("FeedService::InitializeFeedsAsync: initialized grains. " +
+                    "FeedsCount={feedsCount}", _feeds.Count);
+
+                await UpdateFeedSubscriptionsAsync();
+                _logger.LogInformation("FeedService::InitializeFeedsAsync: subscribed to feed updates");
+
+                _logger.LogInformation("FeedService::InitializeFeedsAsync: stop initialize feed grains");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("FeedService::InitializeFeedsAsync: exception raised. " +
+                    "Message={exMsg}", ex.Message);
+                SentrySdk.CaptureException(ex, scope =>
                 {
-                    var feedGrain = _clusterClient.GetGrain<IFeedGrain>(feed.Id);
-                    return feedGrain.InitializeState(
-                        feed.Slug, 
-                        feed.Url, 
-                        feed.DelaySeconds, 
-                        feed.UpdateMinutes,
-                        feed.FeedType,
-                        feed.ReaderType
-                    );
-                })
-                .ToList();
-
-            await Task.WhenAll(feedGrainsTasks);
-
-            _logger.LogInformation("FeedService::InitializeFeedsAsync: stop initialize feed grains");
+                    scope.SetTag("service", "FeedService");
+                    scope.SetTag("method", "InitializeFeedsAsync");
+                    scope.SetExtra("feedsCount", _feeds.Count);
+                });
+                throw;
+            }
         }
 
         public async Task<IFeedPosts> GetBlockFeedPostsAsync(string slug)
@@ -105,15 +128,38 @@ namespace PmPulse.WebApi.Services
             {
                 _logger.LogWarning("FeedService::GetBlockFeedPostsAsync: feed is not found. " +
                     "Slug={slug}", slug);
-                throw new Exception("FeedService::GetBlockFeedPostsAsync: feed is not found");
+                var ex = new Exception("FeedService::GetBlockFeedPostsAsync: feed is not found");
+                SentrySdk.CaptureException(ex, scope =>
+                {
+                    scope.SetTag("service", "FeedService");
+                    scope.SetTag("method", "GetBlockFeedPostsAsync");
+                    scope.SetExtra("slug", slug);
+                });
+                throw ex;
             }
 
-            var feedGrain = _clusterClient.GetGrain<IFeedGrain>(feed.Id);
-            var posts = await feedGrain.GetFeedPosts(feed.BlockLimit);
-            _logger.LogInformation("FeedService::GetBlockFeedPostsAsync: return feed posts. " +
-                "Slug={slug} FeedPosts={feedPosts}", slug, posts?.Posts.Count());
+            try
+            {
+                var feedGrain = _clusterClient.GetGrain<IFeedGrain>(feed.Id);
+                var posts = await feedGrain.GetFeedPosts(feed.BlockLimit);
+                _logger.LogInformation("FeedService::GetBlockFeedPostsAsync: return feed posts. " +
+                    "Slug={slug} FeedPosts={feedPosts}", slug, posts?.Posts.Count());
 
-            return new FeedPosts(feed, posts);
+                return new FeedPosts(feed, posts);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("FeedService::GetBlockFeedPostsAsync: exception raised. " +
+                    "Slug={slug} Message={exMsg}", slug, ex.Message);
+                SentrySdk.CaptureException(ex, scope =>
+                {
+                    scope.SetTag("service", "FeedService");
+                    scope.SetTag("method", "GetBlockFeedPostsAsync");
+                    scope.SetExtra("slug", slug);
+                    scope.SetExtra("feedId", feed.Id);
+                });
+                throw;
+            }
         }
 
         public async Task<IFeedPosts> GetFeedPostsAsync(string slug)
@@ -126,15 +172,38 @@ namespace PmPulse.WebApi.Services
             {
                 _logger.LogWarning("FeedService::GetFeedPostsAsync: feed is not found. " +
                     "Slug={slug}", slug);
-                throw new Exception("FeedService::GetFeedPostsAsync: feed is not found");
+                var ex = new Exception("FeedService::GetFeedPostsAsync: feed is not found");
+                SentrySdk.CaptureException(ex, scope =>
+                {
+                    scope.SetTag("service", "FeedService");
+                    scope.SetTag("method", "GetFeedPostsAsync");
+                    scope.SetExtra("slug", slug);
+                });
+                throw ex;
             }
 
-            var feedGrain = _clusterClient.GetGrain<IFeedGrain>(feed.Id);
-            var posts = await feedGrain.GetFeedPosts(feed.Limit);
+            try
+            {
+                var feedGrain = _clusterClient.GetGrain<IFeedGrain>(feed.Id);
+                var posts = await feedGrain.GetFeedPosts(feed.Limit);
 
-            _logger.LogInformation("FeedService::GetFeedPostsAsync: return feed posts. " +
-                "Slug={slug} FeedPosts={feedPosts}", slug, posts?.Posts.Count());
-            return new FeedPosts(feed, posts);
+                _logger.LogInformation("FeedService::GetFeedPostsAsync: return feed posts. " +
+                    "Slug={slug} FeedPosts={feedPosts}", slug, posts?.Posts.Count());
+                return new FeedPosts(feed, posts);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("FeedService::GetFeedPostsAsync: exception raised. " +
+                    "Slug={slug} Message={exMsg}", slug, ex.Message);
+                SentrySdk.CaptureException(ex, scope =>
+                {
+                    scope.SetTag("service", "FeedService");
+                    scope.SetTag("method", "GetFeedPostsAsync");
+                    scope.SetExtra("slug", slug);
+                    scope.SetExtra("feedId", feed.Id);
+                });
+                throw;
+            }
         }
 
         public IFeed? GetFeedBySlug(string slug)
@@ -148,40 +217,137 @@ namespace PmPulse.WebApi.Services
             return feed;
         }
 
+        public async Task<IEnumerable<IFeedPosts>> GetDailyDigestAsync()
+        {
+            _logger.LogInformation("FeedService::GetDailyDigestAsync: start get daily digest");
+
+            try
+            {
+                var digestFeeds = _feeds
+                    .Where(f => f.IncludeWeeklyDigest)
+                    .Select(f => f)
+                    .ToList();
+                _logger.LogInformation("FeedService::GetDailyDigestAsync: got digest feeds. " +
+                    "Count={digestFeedsCount}", digestFeeds.Count);
+
+                var today = DateTime.Now;
+                var yesterday = DateTime.Now.AddDays(-1);
+
+                var dailyPosts = await digestFeeds
+                    .Select(f => new
+                    {
+                        Feed = f,
+                        Grain = _clusterClient.GetGrain<IFeedGrain>(f.Id)
+                    })
+                    .ToAsyncEnumerable()
+                    .SelectAwait(async fg => new
+                    {
+                        fg.Feed,
+                        Posts = await fg.Grain.GetPostsByDate(yesterday)
+                    })
+                    .Where(fp => fp.Posts.Count() > 0)
+                    .Select(fp => new FeedPosts(fp.Feed, today, fp.Posts))
+                    .ToListAsync();
+
+                _logger.LogInformation("FeedService::GetDailyDigestAsync: return daily digest. " +
+                    "DailyFeedPostsCount={dailyFeedPostsCount}", dailyPosts.Count);
+                return dailyPosts;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("FeedService::GetDailyDigestAsync: exception raised. " +
+                    "Message={exMsg}", ex.Message);
+                SentrySdk.CaptureException(ex, scope =>
+                {
+                    scope.SetTag("service", "FeedService");
+                    scope.SetTag("method", "GetDailyDigestAsync");
+                });
+                throw;
+            }
+            throw new NotImplementedException();
+        }
+
         public async Task<IEnumerable<IFeedPosts>> GetWeeklyDigestAsync()
         {
             const int WEEK_DIGEST_DAYS = -7;
 
             _logger.LogInformation("FeedService::GetWeeklyDigestAsync: start get weekly digest");
 
-            var digestFeeds = _feeds
-                .Where(f => f.IncludeWeeklyDigest)
-                .Select(f => f)
-                .ToList();
-            _logger.LogInformation("FeedService::GetWeeklyDigestAsync: got digest feeds. " +
-                "Count={digestFeedsCount}", digestFeeds.Count);
+            try
+            {
+                var digestFeeds = _feeds
+                    .Where(f => f.IncludeWeeklyDigest)
+                    .Select(f => f)
+                    .ToList();
+                _logger.LogInformation("FeedService::GetWeeklyDigestAsync: got digest feeds. " +
+                    "Count={digestFeedsCount}", digestFeeds.Count);
 
-            var today = DateTime.Today.Date;
-            var startDate = DateTime.Today.AddDays(WEEK_DIGEST_DAYS);
+                var today = DateTime.Today.Date;
+                var startDate = DateTime.Today.AddDays(WEEK_DIGEST_DAYS);
 
-            var weeklyPosts = await digestFeeds
-                .Select(f => new
+                var weeklyPosts = await digestFeeds
+                    .Select(f => new
+                    {
+                        Feed = f,
+                        Grain = _clusterClient.GetGrain<IFeedGrain>(f.Id)
+                    })
+                    .ToAsyncEnumerable()
+                    .SelectAwait(async fg => new
+                    {
+                        fg.Feed,
+                        Posts = await fg.Grain.GetPostsByDate(startDate)
+                    })
+                    .Select(fp => new FeedPosts(fp.Feed, today, fp.Posts))
+                    .ToListAsync();
+
+                _logger.LogInformation("FeedService::GetWeeklyDigestAsync: return weekly digesr. " +
+                    "WeeklyFeedPostsCount={weeklyFeedPostsCount}", weeklyPosts.Count);
+                return weeklyPosts;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("FeedService::GetWeeklyDigestAsync: exception raised. " +
+                    "Message={exMsg}", ex.Message);
+                SentrySdk.CaptureException(ex, scope =>
                 {
-                    Feed = f,
-                    Grain = _clusterClient.GetGrain<IFeedGrain>(f.Id)
-                })
-                .ToAsyncEnumerable()
-                .SelectAwait(async fg => new
-                {
-                    fg.Feed,
-                    Posts = await fg.Grain.GetPostsByDate(startDate)
-                })
-                .Select(fp => new FeedPosts(fp.Feed, today, fp.Posts))
-                .ToListAsync();
+                    scope.SetTag("service", "FeedService");
+                    scope.SetTag("method", "GetWeeklyDigestAsync");
+                });
+                throw;
+            }
+        }
 
-            _logger.LogInformation("FeedService::GetWeeklyDigestAsync: return weekly digesr. " +
-                "WeeklyFeedPostsCount={weeklyFeedPostsCount}", weeklyPosts.Count);
-            return weeklyPosts;
+        public async Task UpdateFeedSubscriptionsAsync()
+        {
+            _logger.LogInformation("FeedService::UpdateFeedSubscriptions: START resubscribe to feed updates");
+
+            try
+            {
+                var feedObserverObj = _clusterClient.CreateObjectReference<IFeedUpdateObserver>(_feedUpdateObserver);
+
+                var feedGrainsTasks = _feeds
+                    .Select(feed =>
+                    {
+                        var feedGrain = _clusterClient.GetGrain<IFeedGrain>(feed.Id);
+                        return feedGrain.Subscribe(feedObserverObj);
+                    })
+                    .ToList();
+                await Task.WhenAll(feedGrainsTasks);
+
+                _logger.LogInformation("FeedService::UpdateFeedSubscriptions: END resubscribe to feed updates");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("FeedService::UpdateFeedSubscriptionsAsync: exception raised. " +
+                    "Message={exMsg}", ex.Message);
+                SentrySdk.CaptureException(ex, scope =>
+                {
+                    scope.SetTag("service", "FeedService");
+                    scope.SetTag("method", "UpdateFeedSubscriptionsAsync");
+                    scope.SetExtra("feedsCount", _feeds.Count);
+                });
+                throw;
+            }
         }
     }
 }

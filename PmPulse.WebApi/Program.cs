@@ -1,4 +1,8 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.StaticFiles;
+using PmPulse.GrainInterfaces;
+using PmPulse.WebApi.Hubs;
+using PmPulse.WebApi.Models;
 using PmPulse.WebApi.Models.Configuration;
 using PmPulse.WebApi.Services;
 using Serilog;
@@ -9,10 +13,12 @@ static void ConfigureServices(IServiceCollection services)
 {
     // HostedService
     services.AddHostedService<StartupService>();
+    services.AddHostedService<FeedSubscriptionService>();
 
     // Singletons
     services.AddSingleton<IBlockService, BlockService>();
     services.AddSingleton<IFeedService,  FeedService>();
+    services.AddSingleton<IFeedUpdateObserver, FeedUpdateObserver>();
 }
 
 static void ConfigureOptions(IServiceCollection services, IConfiguration configuration)
@@ -30,6 +36,23 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
     var configuration = builder.Configuration;
+
+    // Configure Sentry (production only)
+    if (builder.Environment.IsProduction())
+    {
+        var sentryDsn = Environment.GetEnvironmentVariable("SENTRY_DSN") 
+            ?? Environment.GetEnvironmentVariable("Sentry__Dsn");
+        
+        if (!string.IsNullOrEmpty(sentryDsn))
+        {
+            builder.WebHost.UseSentry(options =>
+            {
+                options.Dsn = sentryDsn;
+                options.TracesSampleRate = 1.0; // Capture 100% of transactions for performance monitoring
+                options.Environment = builder.Environment.EnvironmentName;
+            });
+        }
+    }
 
     // Configure Kestrel for HTTPS with PEM certificates (non-development environments)
     if (!builder.Environment.IsDevelopment())
@@ -55,6 +78,9 @@ try
     // Configure application services
     ConfigureServices(builder.Services);
 
+    // Add SignalR
+    builder.Services.AddSignalR();
+
     // Add controllers to the container
     builder.Services
         .AddControllers()
@@ -74,33 +100,51 @@ try
         }
         else
         {
-            // Use Redis clustering for Docker networking with scale support
-            var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") 
-                ?? Environment.GetEnvironmentVariable("ConnectionStrings__redis") 
-                ?? "localhost:6379";
+            // Use PostgreSQL clustering for Docker networking with scale support
+            var postgresConnectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING") 
+                ?? Environment.GetEnvironmentVariable("ConnectionStrings__postgres") 
+                ?? "Host=localhost;Database=orleans;Username=orleans;Password=orleans";
             
-            client.UseRedisClustering(options =>
+            client.UseAdoNetClustering(options =>
             {
-                options.ConfigurationOptions = StackExchange.Redis.ConfigurationOptions.Parse(redisConnectionString);
+                options.Invariant = "Npgsql";
+                options.ConnectionString = postgresConnectionString;
             });
         }
         
         // Configure connection retry for better reliability
         client.Configure<Orleans.Configuration.ClusterOptions>(options =>
         {
-            options.ClusterId = "dev";
+            options.ClusterId = "Silo";
             options.ServiceId = "PmPulse";
         });
         
         // Add retry logic for gateway connections
         client.Configure<Orleans.Configuration.GatewayOptions>(options =>
         {
-            options.GatewayListRefreshPeriod = TimeSpan.FromSeconds(10);
+            options.GatewayListRefreshPeriod = TimeSpan.FromSeconds(30);
         });
     });
 
     /* BUILD */
     var app = builder.Build();
+
+    // Use Sentry to capture exceptions and performance (production only)
+    if (app.Environment.IsProduction())
+    {
+        app.UseSentryTracing();
+    }
+
+    // Configure forwarded headers for reverse proxy support (required for WebSocket behind proxy)
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost,
+            // Trust all proxies in Docker network - adjust if needed for security
+            RequireHeaderSymmetry = false
+        });
+    }
 
     // Configure the HTTP request pipeline
     if (!app.Environment.IsDevelopment())
@@ -113,38 +157,17 @@ try
 
     // Configure static files with appropriate cache control
     var staticFileOptions = new StaticFileOptions();
+    staticFileOptions.OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
+        ctx.Context.Response.Headers.Append("Pragma", "no-cache");
+        ctx.Context.Response.Headers.Append("Expires", "0");
+    };
     
-    if (app.Environment.IsDevelopment())
-    {
-        // Disable caching in development to ensure fresh content
-        staticFileOptions.OnPrepareResponse = ctx =>
-        {
-            ctx.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
-            ctx.Context.Response.Headers.Append("Pragma", "no-cache");
-            ctx.Context.Response.Headers.Append("Expires", "0");
-        };
-    }
-    else
-    {
-        // In production, allow caching for hashed assets (Vite adds hashes to filenames)
-        // HTML files should not be cached to ensure updates are picked up
-        staticFileOptions.OnPrepareResponse = ctx =>
-        {
-            var path = ctx.File.Name.ToLower();
-            if (path.EndsWith(".html"))
-            {
-                // Don't cache HTML files
-                ctx.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
-                ctx.Context.Response.Headers.Append("Pragma", "no-cache");
-                ctx.Context.Response.Headers.Append("Expires", "0");
-            }
-            else
-            {
-                // Cache static assets (JS, CSS, images) for 1 year since they have hashes
-                ctx.Context.Response.Headers.Append("Cache-Control", "public, max-age=31536000, immutable");
-            }
-        };
-    }
+    // Ensure .webmanifest files are served with correct MIME type
+    var contentTypeProvider = new FileExtensionContentTypeProvider();
+    contentTypeProvider.Mappings[".webmanifest"] = "application/manifest+json";
+    staticFileOptions.ContentTypeProvider = contentTypeProvider;
     
     app.UseStaticFiles(staticFileOptions);
     app.UseRouting();
@@ -156,6 +179,7 @@ try
             name: "default",
             pattern: "api/{controller}/{action=Index}/{id?}"
         );
+        endpoints.MapHub<FeedUpdateHub>("/hubs/feedupdate");
     });
 #pragma warning restore ASP0014 // Suggest using top level route registrations
 

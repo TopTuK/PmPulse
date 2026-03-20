@@ -5,6 +5,7 @@ using PmPulse.AppDomain.Models.Rss;
 using PmPulse.AppDomain.Services;
 using PmPulse.GrainInterfaces;
 using PmPulse.GrainInterfaces.Models;
+using Sentry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -72,12 +73,14 @@ namespace PmPulse.GrainClasses.Fetchers
             _logger.LogInformation("RssFeedFetcherGrain::FetchRssFeedAsync: start fetch RSS feed. " +
                 "RssUrl={rssUrl}", feedUrl);
 
-            var rssFeed = await RssFeedParser.ParseRssFeedAsync(feedUrl, 200, readerType);
-            _logger.LogInformation("RssFeedFetcherGrain::FetchRssFeedAsync: complete parse RSS feed. " +
-                "RssName={rssName}, RssUrl={rssUrl}, MessagesCount={msgCount}",
-            rssFeed.Title, rssFeed.Url, rssFeed.Entries.Count);
+            try
+            {
+                var rssFeed = await RssFeedParser.ParseRssFeedAsync(feedUrl, 200, readerType);
+                _logger.LogInformation("RssFeedFetcherGrain::FetchRssFeedAsync: complete parse RSS feed. " +
+                    "RssName={rssName}, RssUrl={rssUrl}, MessagesCount={msgCount}",
+                rssFeed.Title, rssFeed.Url, rssFeed.Entries.Count);
 
-            var posts = rssFeed.Entries
+                var posts = rssFeed.Entries
                 .Select(m => FeedPostsFactory.CreateFeedPost(
                     m.Text ?? "Empty text",
                     m.Url ?? string.Empty,
@@ -86,9 +89,25 @@ namespace PmPulse.GrainClasses.Fetchers
                 ))
                 .ToList();
 
-            _logger.LogInformation("RssFeedFetcherGrain::FetchRssFeedAsync: return rss feed posts. " +
+                _logger.LogInformation("RssFeedFetcherGrain::FetchRssFeedAsync: return rss feed posts. " +
                 "RssName={rssName} PostsCount={postsCount}", rssFeed.Title, posts.Count);
-            return posts;
+                return posts;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("RssFeedFetcherGrain::FetchRssFeedAsync: exception raised. Msg: {exMsg}",
+                    ex.Message);
+                
+                SentrySdk.CaptureException(ex, scope =>
+                {
+                    scope.SetTag("grain", "RssFeedFetcherGrain");
+                    scope.SetTag("method", "FetchRssFeedAsync");
+                    scope.SetExtra("feedUrl", feedUrl);
+                    scope.SetExtra("readerType", readerType.ToString());
+                });
+                
+                throw;
+            }
         }
 
         public async Task ReceiveReminder(string reminderName, TickStatus status)
@@ -103,12 +122,41 @@ namespace PmPulse.GrainClasses.Fetchers
             {
                 var feedUrl = _feedFetcherState.State.Url;
                 var readerType = _feedFetcherState.State.ReaderType;
-                var posts = await FetchRssFeedAsync(feedUrl, readerType);
+                try
+                {
+                    var posts = await FetchRssFeedAsync(feedUrl, readerType);
 
-                _logger.LogInformation("RssFeedFetcherGrain::ReceiveReminder: set posts to feed grain. " +
-                    "GrainId={grainId}, PostsCount={postsCount}", grainId, posts.Count());
-                var feedGrain = GrainFactory.GetGrain<IFeedGrain>(grainId);
-                await feedGrain.SetPosts(posts);
+                    if (posts.Any())
+                    {
+                        _logger.LogInformation("RssFeedFetcherGrain::ReceiveReminder: start set posts to feed grain. " +
+                        "GrainId={grainId}, PostsCount={postsCount}", grainId, posts.Count());
+
+                        var feedGrain = GrainFactory.GetGrain<IFeedGrain>(grainId);
+                        await feedGrain.SetPosts(posts);
+
+                        _logger.LogInformation("RssFeedFetcherGrain::ReceiveReminder: end set posts to feed grain. " +
+                        "GrainId={grainId}, PostsCount={postsCount}", grainId, posts.Count());
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("RssFeedFetcherGrain::ReceiveReminder: exception raised. " +
+                        "GrainId={grainId} Slug={slug} FeedUrl={feedUrl} Message={exMsg}", 
+                        grainId, slug, feedUrl, ex.Message);
+                    
+                    SentrySdk.CaptureException(ex, scope =>
+                    {
+                        scope.SetTag("grain", "RssFeedFetcherGrain");
+                        scope.SetTag("method", "ReceiveReminder");
+                        scope.SetTag("reminderName", reminderName);
+                        scope.SetExtra("grainId", grainId.ToString());
+                        scope.SetExtra("slug", slug);
+                        scope.SetExtra("feedUrl", feedUrl);
+                        scope.SetExtra("readerType", readerType.ToString());
+                    });
+                    
+                    // Exception is handled and not re-thrown to prevent reminder failure
+                }
             }
 
             _logger.LogInformation("RssFeedFetcherGrain::ReceiveReminder: stop execute reminder. " +

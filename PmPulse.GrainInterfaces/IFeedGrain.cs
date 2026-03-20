@@ -28,5 +28,12 @@ namespace PmPulse.GrainInterfaces
 
         [Alias("GetPostsByDate")]
         Task<IEnumerable<IFeedPost>> GetPostsByDate(DateTime startDate);
+
+
+        [Alias("Subscribe")]
+        Task Subscribe(IFeedUpdateObserver observer);
+
+        [Alias("UnSubscribe")]
+        Task UnSubscribe(IFeedUpdateObserver observer);
     }
 }

@@ -1,8 +1,9 @@
 <script setup>
-import { ref, onBeforeMount, watch } from 'vue'
+import { ref, onBeforeMount, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import useFeedService from '@/services/feedService'
+import signalRService from '@/services/signalRService'
 import { formateDateTime, truncateHtmlText } from '@/utils'
 import FeedPostModalView from '@/components/FeedPostModalView.vue'
 
@@ -123,8 +124,41 @@ const showFeedPost = (url) => {
     }
 }
 
+// SignalR connection handler
+let feedUpdateUnsubscribe = null
+const handleFeedUpdate = (data) => {
+    console.log('FeedView: received FeedUpdated event', data)
+    
+    // Only refresh if the update is for the current feed
+    if (data && data.slug === slug) {
+        console.log('FeedView: feed update matches current feed, refreshing...')
+        loadFeed()
+    }
+}
+
 onBeforeMount(async () => {
     await loadFeed()
+    
+    // Start SignalR connection and listen for feed updates
+    try {
+        await signalRService.start()
+        
+        // Subscribe to feed update events
+        feedUpdateUnsubscribe = signalRService.on('FeedUpdated', handleFeedUpdate)
+        
+        console.log('FeedView: SignalR connection established and listening for feed updates')
+    } catch (error) {
+        console.error('FeedView: error connecting to SignalR', error)
+        // Continue even if SignalR connection fails - feed will still work via manual refresh
+    }
+})
+
+onUnmounted(() => {
+    // Clean up SignalR listener
+    if (feedUpdateUnsubscribe) {
+        feedUpdateUnsubscribe()
+        feedUpdateUnsubscribe = null
+    }
 })
 </script>
 
