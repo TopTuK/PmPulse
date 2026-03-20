@@ -217,6 +217,56 @@ namespace PmPulse.WebApi.Services
             return feed;
         }
 
+        public async Task<IEnumerable<IFeedPosts>> GetDailyDigestAsync()
+        {
+            _logger.LogInformation("FeedService::GetDailyDigestAsync: start get daily digest");
+
+            try
+            {
+                var digestFeeds = _feeds
+                    .Where(f => f.IncludeWeeklyDigest)
+                    .Select(f => f)
+                    .ToList();
+                _logger.LogInformation("FeedService::GetDailyDigestAsync: got digest feeds. " +
+                    "Count={digestFeedsCount}", digestFeeds.Count);
+
+                var today = DateTime.Now;
+                var yesterday = DateTime.Now.AddDays(-1);
+
+                var dailyPosts = await digestFeeds
+                    .Select(f => new
+                    {
+                        Feed = f,
+                        Grain = _clusterClient.GetGrain<IFeedGrain>(f.Id)
+                    })
+                    .ToAsyncEnumerable()
+                    .SelectAwait(async fg => new
+                    {
+                        fg.Feed,
+                        Posts = await fg.Grain.GetPostsByDate(yesterday)
+                    })
+                    .Where(fp => fp.Posts.Count() > 0)
+                    .Select(fp => new FeedPosts(fp.Feed, today, fp.Posts))
+                    .ToListAsync();
+
+                _logger.LogInformation("FeedService::GetDailyDigestAsync: return daily digest. " +
+                    "DailyFeedPostsCount={dailyFeedPostsCount}", dailyPosts.Count);
+                return dailyPosts;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("FeedService::GetDailyDigestAsync: exception raised. " +
+                    "Message={exMsg}", ex.Message);
+                SentrySdk.CaptureException(ex, scope =>
+                {
+                    scope.SetTag("service", "FeedService");
+                    scope.SetTag("method", "GetDailyDigestAsync");
+                });
+                throw;
+            }
+            throw new NotImplementedException();
+        }
+
         public async Task<IEnumerable<IFeedPosts>> GetWeeklyDigestAsync()
         {
             const int WEEK_DIGEST_DAYS = -7;

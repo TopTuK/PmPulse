@@ -101,6 +101,31 @@ namespace PmPulse.WebApi.Controllers
             }
         }
 
+        public async Task<IActionResult> GetDailyDigest()
+        {
+            _logger.LogInformation("FeedPostController::GetDailyDigest: start get daily digest.");
+
+            try
+            {
+                var dailyDigest = await _feedService.GetDailyDigestAsync();
+
+                _logger.LogInformation("FeedPostController::GetDailyDigest: return daily digest. " +
+                    "DigestCount={dailyDigestCount}", dailyDigest.Count());
+                return new JsonResult(dailyDigest);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("FeedPostController::GetDailyDigest: exception raised. " +
+                    "Message={exMsg}", ex.Message);
+                SentrySdk.CaptureException(ex, scope =>
+                {
+                    scope.SetTag("controller", "FeedPostController");
+                    scope.SetTag("method", "GetDailyDigest");
+                });
+                return BadRequest("Daily digest is not found");
+            }
+        }
+
         public async Task<IActionResult> GetWeeklyDigest()
         {
             _logger.LogInformation("FeedPostController::GetWeeklyDigest: start get weekly digest. ");
