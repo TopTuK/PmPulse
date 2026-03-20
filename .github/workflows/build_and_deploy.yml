@@ -1,5 +1,10 @@
 name: Build and Deploy
 
+# GitHub Actions is deprecating Node.js 20. Opt into Node.js 24 now so JS-based
+# actions (e.g. actions/checkout@v4) run on a supported runtime.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   # Commented out automatic trigger on push
   # push:
@@ -14,7 +19,7 @@ jobs:
     name: Build images
     runs-on: ubuntu-latest
     steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v6
         - run: chmod +x ./build-images.sh
         - run: docker login ghcr.io -u $GITHUB_ACTOR -p ${{ secrets.REPO_TOKEN }}
         - run: ./build-images.sh
@@ -41,7 +46,7 @@ jobs:
         SSH_KEY_PATH: /tmp/ssh_key
     steps:
         - name: Checkout
-          uses: actions/checkout@v4
+          uses: actions/checkout@v6
         - name: Make envfile
           run: export | grep "secret_" | sed "s/declare -x secret_//" > .env
           env:
