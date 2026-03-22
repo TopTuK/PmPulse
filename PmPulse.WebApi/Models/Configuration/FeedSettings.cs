@@ -13,6 +13,7 @@
         public int DelaySeconds { get; set; } = 5;
         public int UpdateMinutes { get; set; } = 5;
         public bool IncludeWeeklyDigest { get; set; } = false;
+        public bool IncludeDailyDigest { get; set; } = false;
         public int ReaderFilter { get; set; } = 0;
     }
 }
