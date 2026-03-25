@@ -4,7 +4,10 @@ WORKDIR /app
 
 # Copy webapp package files and install dependencies
 COPY webapp/package*.json ./
-RUN npm ci
+# Workaround for npm optional-dependencies bug that can prevent Rollup's
+# musl native binary (@rollup/rollup-linux-x64-musl) from being installed.
+# We remove package-lock.json so npm can re-resolve/install optional deps.
+RUN rm -f package-lock.json && npm install --no-audit --no-fund
 
 # Copy webapp source code
 COPY webapp/ .
