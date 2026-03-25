@@ -3,10 +3,8 @@ using PmPulse.AppDomain.Models.Feed;
 using PmPulse.AppDomain.Models.Post;
 using PmPulse.AppDomain.Models.Rss;
 using PmPulse.GrainInterfaces;
-using PmPulse.GrainInterfaces.Models;
 using PmPulse.WebApi.Models;
 using PmPulse.WebApi.Models.Configuration;
-using Sentry;
 
 namespace PmPulse.WebApi.Services
 {
@@ -247,7 +245,7 @@ namespace PmPulse.WebApi.Services
                         fg.Feed,
                         Posts = await fg.Grain.GetPostsByDate(yesterday)
                     })
-                    .Where(fp => fp.Posts.Count() > 0)
+                    .Where(fp => fp.Posts.Any())
                     .Select(fp => new FeedPosts(fp.Feed, today, fp.Posts))
                     .ToListAsync();
 
