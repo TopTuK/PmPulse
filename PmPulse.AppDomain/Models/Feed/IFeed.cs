@@ -22,6 +22,7 @@ namespace PmPulse.AppDomain.Models.Feed
         [JsonIgnore] int DelaySeconds { get; }
         [JsonIgnore] int UpdateMinutes { get; }
         [JsonIgnore] bool IncludeWeeklyDigest { get; }
+        [JsonIgnore] bool IncludeDailyDigest { get; }
         [JsonIgnore] FeedReaderType ReaderType { get; }
     }
 }

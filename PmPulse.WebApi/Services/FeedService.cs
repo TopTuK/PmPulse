@@ -32,6 +32,7 @@ namespace PmPulse.WebApi.Services
             public int DelaySeconds { get; init; }
             public int UpdateMinutes { get; init; }
             public bool IncludeWeeklyDigest { get; init; }
+            public bool IncludeDailyDigest { get; init; }
 
             public FeedReaderType ReaderType { get; init; }
         }
@@ -54,6 +55,7 @@ namespace PmPulse.WebApi.Services
                     DelaySeconds = f.DelaySeconds,
                     UpdateMinutes = f.UpdateMinutes,
                     IncludeWeeklyDigest = f.IncludeWeeklyDigest,
+                    IncludeDailyDigest = f.IncludeDailyDigest,
                     ReaderType = (FeedReaderType) f.ReaderFilter,
                 })
                 .ToList();
@@ -224,7 +226,7 @@ namespace PmPulse.WebApi.Services
             try
             {
                 var digestFeeds = _feeds
-                    .Where(f => f.IncludeWeeklyDigest)
+                    .Where(f => f.IncludeDailyDigest)
                     .Select(f => f)
                     .ToList();
                 _logger.LogInformation("FeedService::GetDailyDigestAsync: got digest feeds. " +
