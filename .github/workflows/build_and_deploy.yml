@@ -60,6 +60,7 @@ jobs:
         - name: Create remote directory structure
           run: ssh -i ${{ env.SSH_KEY_PATH }} -p ${{ env.PRODUCTION_SSH_PORT }} -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} "mkdir -p /home/toptuk/pmpulse/docker-entrypoint-initdb.d"
         - name: Stop service
+          continue-on-error: true
           run: ssh -i ${{ env.SSH_KEY_PATH }} -p ${{ env.PRODUCTION_SSH_PORT }} -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} "cd /home/toptuk/pmpulse && docker compose -f docker-compose.production.yml down"
         - name: Copy docker-compose.production.yml
           run: scp -P ${{ env.PRODUCTION_SSH_PORT }} -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} docker-compose.production.yml ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:/home/toptuk/pmpulse/docker-compose.production.yml
