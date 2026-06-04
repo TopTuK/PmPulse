@@ -48,7 +48,9 @@ jobs:
         - name: Checkout
           uses: actions/checkout@v6
         - name: Make envfile
-          run: export | grep "secret_" | sed "s/declare -x secret_//" > .env
+          run: |
+            export | grep "secret_" | sed "s/declare -x secret_//" > .env
+            echo "IMAGE_TAG=${{ github.sha }}" >> .env
           env:
             secret_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
             secret_SILO_SENTRY_DSN: ${{ secrets.SILO_SENTRY_DSN }}
@@ -57,7 +59,7 @@ jobs:
         - name: Create remote directory structure
           run: ssh -i ${{ env.SSH_KEY_PATH }} -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} "mkdir -p /home/toptuk/pmpulse/docker-entrypoint-initdb.d"
         - name: Stop service
-          run: ssh -i ${{ env.SSH_KEY_PATH }} ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} "cd /home/toptuk/pmpulse && docker compose -f docker-compose.production.yml down -v"
+          run: ssh -i ${{ env.SSH_KEY_PATH }} -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} "cd /home/toptuk/pmpulse && docker compose -f docker-compose.production.yml down"
         - name: Copy docker-compose.production.yml
           run: scp -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} docker-compose.production.yml ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:/home/toptuk/pmpulse/docker-compose.production.yml
         - name: Copy .env file
@@ -67,4 +69,12 @@ jobs:
             if [ "$(ls -A docker-entrypoint-initdb.d 2>/dev/null)" ]; then
               scp -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} -r docker-entrypoint-initdb.d/* ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:/home/toptuk/pmpulse/docker-entrypoint-initdb.d/
             fi
-        - run: ssh -i ${{ env.SSH_KEY_PATH }} ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} "cd /home/toptuk/pmpulse && docker login ghcr.io -u $GITHUB_ACTOR -p ${{ secrets.REPO_TOKEN }} && docker pull ghcr.io/toptuk/pmpulse-silohost:latest && docker pull ghcr.io/toptuk/pmpulse-webapi:latest && docker compose -f docker-compose.production.yml up -d && docker system prune --all --force"
+        - name: Pull images and start
+          run: |
+            ssh -i ${{ env.SSH_KEY_PATH }} -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} \
+              "cd /home/toptuk/pmpulse && \
+              docker login ghcr.io -u $GITHUB_ACTOR -p ${{ secrets.REPO_TOKEN }} && \
+              docker pull ghcr.io/toptuk/pmpulse-silohost:${{ github.sha }} && \
+              docker pull ghcr.io/toptuk/pmpulse-webapi:${{ github.sha }} && \
+              docker compose -f docker-compose.production.yml up -d && \
+              docker image prune -f"
