@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SSH_KEY_PATH: /tmp/ssh_key
+      PRODUCTION_SSH_PORT: 45654
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -23,21 +24,21 @@ jobs:
           secret_POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       - run: echo "${{ secrets.PRODUCTION_SSH_KEY }}" > ${{ env.SSH_KEY_PATH }} && chmod 600 ${{ env.SSH_KEY_PATH }}
       - name: Create remote directory structure
-        run: ssh -i ${{ env.SSH_KEY_PATH }} -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} "mkdir -p /home/toptuk/pmpulse/docker-entrypoint-initdb.d"
+        run: ssh -i ${{ env.SSH_KEY_PATH }} -p ${{ env.PRODUCTION_SSH_PORT }} -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} "mkdir -p /home/toptuk/pmpulse/docker-entrypoint-initdb.d"
       - name: Stop service
-        run: ssh -i ${{ env.SSH_KEY_PATH }} -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} "cd /home/toptuk/pmpulse && docker compose -f docker-compose.production.yml down"
+        run: ssh -i ${{ env.SSH_KEY_PATH }} -p ${{ env.PRODUCTION_SSH_PORT }} -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} "cd /home/toptuk/pmpulse && docker compose -f docker-compose.production.yml down"
       - name: Copy docker-compose.production.yml
-        run: scp -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} docker-compose.production.yml ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:/home/toptuk/pmpulse/docker-compose.production.yml
+        run: scp -P ${{ env.PRODUCTION_SSH_PORT }} -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} docker-compose.production.yml ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:/home/toptuk/pmpulse/docker-compose.production.yml
       - name: Copy .env file
-        run: scp -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} .env ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:/home/toptuk/pmpulse/.env
+        run: scp -P ${{ env.PRODUCTION_SSH_PORT }} -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} .env ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:/home/toptuk/pmpulse/.env
       - name: Copy docker-entrypoint-initdb.d directory
         run: |
           if [ "$(ls -A docker-entrypoint-initdb.d 2>/dev/null)" ]; then
-            scp -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} -r docker-entrypoint-initdb.d/* ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:/home/toptuk/pmpulse/docker-entrypoint-initdb.d/
+            scp -P ${{ env.PRODUCTION_SSH_PORT }} -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} -r docker-entrypoint-initdb.d/* ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:/home/toptuk/pmpulse/docker-entrypoint-initdb.d/
           fi
       - name: Pull images and start
         run: |
-          ssh -i ${{ env.SSH_KEY_PATH }} -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} \
+          ssh -i ${{ env.SSH_KEY_PATH }} -p ${{ env.PRODUCTION_SSH_PORT }} -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} \
             "cd /home/toptuk/pmpulse && \
             docker login ghcr.io -u $GITHUB_ACTOR -p ${{ secrets.REPO_TOKEN }} && \
             docker pull ghcr.io/toptuk/pmpulse-silohost:latest && \
