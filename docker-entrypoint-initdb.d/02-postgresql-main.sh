@@ -8,15 +8,11 @@ ORLEANS_PASSWORD="${POSTGRES_PASSWORD:-orleans}"
 POSTGRES_USER="${POSTGRES_USER:-postgres}"
 POSTGRES_DB="${POSTGRES_DB:-$POSTGRES_USER}"
 
-# Execute PostgreSQL-Main.sql against the orleans database
-# This script runs after the orleans database is created by 01-init-orleans.sh
-# The SQL file is in the same directory as this script
+# Execute Orleans SQL from sql/ (not the initdb root — root *.sql would run twice via entrypoint)
 SCRIPT_DIR="$(dirname "$0")"
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "orleans" -f "$SCRIPT_DIR/02-postgresql-main.sql"
-
-# Execute PostgreSQL-Clustering.sql after PostgreSQL-Main.sql
-# The SQL file is in the same directory as this script
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "orleans" -f "$SCRIPT_DIR/03-postgresql-clustering.sql"
+SQL_DIR="$SCRIPT_DIR/sql"
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "orleans" -f "$SQL_DIR/02-postgresql-main.sql"
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "orleans" -f "$SQL_DIR/03-postgresql-clustering.sql"
 
 # Grant all privileges on OrleansQuery table to orleans user
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "orleans" <<-EOSQL

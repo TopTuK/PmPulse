@@ -68,8 +68,8 @@ jobs:
           run: scp -P ${{ env.PRODUCTION_SSH_PORT }} -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} .env ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:/home/toptuk/pmpulse/.env
         - name: Copy docker-entrypoint-initdb.d directory
           run: |
-            if [ "$(ls -A docker-entrypoint-initdb.d 2>/dev/null)" ]; then
-              scp -P ${{ env.PRODUCTION_SSH_PORT }} -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} -r docker-entrypoint-initdb.d/* ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:/home/toptuk/pmpulse/docker-entrypoint-initdb.d/
+            if [ -d docker-entrypoint-initdb.d ]; then
+              scp -P ${{ env.PRODUCTION_SSH_PORT }} -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} -r docker-entrypoint-initdb.d ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:/home/toptuk/pmpulse/
             fi
         - name: Pull images and start
           run: |

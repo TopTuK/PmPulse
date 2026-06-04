@@ -42,6 +42,5 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "orleans" <<-EOSQL
     GRANT ALL PRIVILEGES ON DATABASE orleans TO orleans;
 EOSQL
 
-# Note: 02-postgresql-main.sql and 03-postgresql-clustering.sql will be executed by 02-postgresql-main.sh
-# which runs after this script completes
+# Note: Orleans SQL in sql/ is executed by 02-postgresql-main.sh after this script completes
 

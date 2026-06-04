@@ -16,10 +16,15 @@ services:
       - pmpulse-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U orleans"]
-      interval: 10s
+      test:
+        - CMD-SHELL
+        - >
+          pg_isready -U orleans -d orleans &&
+          psql -U orleans -d orleans -tAc "SELECT 1 FROM information_schema.tables WHERE table_name = 'OrleansMembershipTable'" | grep -q 1
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 30
+      start_period: 120s
 
   # Orleans Silo Host (scalable)
   pmpulse-silohost:
