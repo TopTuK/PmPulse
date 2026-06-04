@@ -4,7 +4,8 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-RUN npm ci
+RUN npm ci \
+    && npm install --no-save "@rollup/rollup-linux-x64-musl@$(node -p "require('rollup/package.json').version")"
 
 # Copy source code
 COPY . .

@@ -4,7 +4,9 @@ WORKDIR /app
 
 # Copy webapp package files and install dependencies
 COPY webapp/package*.json ./
-RUN npm ci
+# Lockfile may be generated on macOS/Windows; ensure Rollup's Alpine (musl) native binding is present.
+RUN npm ci \
+    && npm install --no-save "@rollup/rollup-linux-x64-musl@$(node -p "require('rollup/package.json').version")"
 
 # Copy webapp source code
 COPY webapp/ .
