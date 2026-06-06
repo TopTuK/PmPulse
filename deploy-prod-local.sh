@@ -25,8 +25,8 @@ SILO_SENTRY_DSN=${SILO_SENTRY_DSN:-}
 IMAGE_TAG=${IMAGE_TAG}
 EOF
 
-echo "==> Ensuring external network pmi_network exists (used by reverse proxy in production)"
-docker network inspect pmi_network >/dev/null 2>&1 || docker network create pmi_network
+echo "==> Ensuring external network proxy exists (used by reverse proxy in production)"
+docker network inspect proxy >/dev/null 2>&1 || docker network create proxy
 
 echo "==> Ensuring TLS certs exist for Kestrel HTTPS"
 mkdir -p certs
