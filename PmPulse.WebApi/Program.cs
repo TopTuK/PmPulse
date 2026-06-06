@@ -129,10 +129,15 @@ try
     /* BUILD */
     var app = builder.Build();
 
-    // Use Sentry to capture exceptions and performance (production only)
+    // Use Sentry to capture exceptions and performance (production only, when configured)
     if (app.Environment.IsProduction())
     {
-        app.UseSentryTracing();
+        var sentryDsn = Environment.GetEnvironmentVariable("SENTRY_DSN")
+            ?? Environment.GetEnvironmentVariable("Sentry__Dsn");
+        if (!string.IsNullOrEmpty(sentryDsn))
+        {
+            app.UseSentryTracing();
+        }
     }
 
     // Configure forwarded headers for reverse proxy support (required for WebSocket behind proxy)

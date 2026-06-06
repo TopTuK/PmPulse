@@ -20,7 +20,7 @@ services:
         - CMD-SHELL
         - >
           pg_isready -U orleans -d orleans &&
-          psql -U orleans -d orleans -tAc "SELECT 1 FROM information_schema.tables WHERE table_name = 'OrleansMembershipTable'" | grep -q 1
+          psql -U orleans -d orleans -tAc "SELECT 1 FROM information_schema.tables WHERE table_name = 'orleansmembershiptable'" | grep -q 1
       interval: 5s
       timeout: 5s
       retries: 30
